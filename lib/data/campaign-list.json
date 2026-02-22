@@ -1,0 +1,55 @@
+{
+    "campaigns": [
+        {
+            "id": 1,
+            "title": "Help Chan's Education",
+            "progress": 50,
+            "description": "Support Chan's education and help him achieve his dreams.",
+            "goalAmount": 4000,
+            "raisedAmount": 2000,
+            "status": true,
+            "categoryName": "Education",
+            "userResponse": {
+                "uuid": "123e4567-e89b-12d3-a456-426614174000",
+                "firstName": "John",
+                "lastName": "Doe",
+                "profileImage": "https://via.placeholder.com/150",
+                "email": "john.doe@example.com"
+            },
+            "updateResponse":[
+                {
+                    "id": 1,
+                    "message": "We have reached 50% of our goal! Thank you for your support."
+                },
+                {
+                    "id": 2,
+                    "message": "Only 10 days left to reach our goal! Please share and donate."
+                }
+            ],
+            "comments":[
+                {
+                    "id": 1,
+                    "content": "Great campaign! I just donated.",
+                    "userResponse": {
+                        "uuid": "123e4567-e89b-12d3-a456-426614174001",
+                        "firstName": "Jane",
+                        "lastName": "Smith",
+                        "profileImage": "https://via.placeholder.com/150",
+                        "email": "jane.smith@example.com"
+                    }
+                },
+                {
+                    "id": 2,
+                    "content": "I just donated as well! Keep up the great work.",
+                    "userResponse": {
+                        "uuid": "123e4567-e89b-12d3-a456-426614174002",
+                        "firstName": "Alice",
+                        "lastName": "Smith",
+                        "profileImage": "https://via.placeholder.com/150",
+                        "email": "alice.smith@example.com"
+                    }
+                }
+            ]
+        }
+    ]
+}

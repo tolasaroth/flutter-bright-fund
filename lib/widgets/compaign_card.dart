@@ -8,7 +8,7 @@ class CampaignCard extends StatelessWidget {
   final double raised;
   final double goal;
 
-  const CampaignCard({
+  const CampaignCard({super.key, 
     required this.imageUrl,
     required this.donationCount,
     required this.daysLeft,
@@ -27,6 +27,7 @@ class CampaignCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
+            // ignore: deprecated_member_use
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),

@@ -1,5 +1,8 @@
-import 'package:flutter/material.dart';
-import 'login_screen.dart';
+// ignore_for_file: avoid_print
+
+import 'package:flutter/cupertino.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:gofundme/services/auth_service.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -9,386 +12,463 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
-  final _formKey = GlobalKey<FormState>();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _profileImageController = TextEditingController();
 
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
-  String? _selectedType;
+  String? _selectedRole;
+  bool _isLoading = false;
 
-  final List<String> _types = [
+  static const _roles = [
     'Individual',
-    'Organization',
+    'Student',
+    'Entrepreneur',
+    'Investor',
     'Non-Profit',
-    'Business',
   ];
+  static const _green = Color(0xFF2ECC71);
 
   @override
   void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _emailController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _profileImageController.dispose();
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF2ECC71),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF2ECC71),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const LoginScreen()),
-            );
-          },
-        ),
+  // ─── Validation ─────────────────────────────────────────────────────────
+
+  String? _validate() {
+    if (_firstNameController.text.trim().isEmpty)
+      return 'First name is required.';
+    if (_lastNameController.text.trim().isEmpty)
+      return 'Last name is required.';
+    if (_emailController.text.trim().isEmpty) return 'Email is required.';
+    if (!_emailController.text.contains('@'))
+      return 'Enter a valid email address.';
+    if (_phoneController.text.trim().isEmpty)
+      return 'Phone number is required.';
+    if (_selectedRole == null) return 'Please select an account type.';
+    if (_passwordController.text.isEmpty) return 'Password is required.';
+    if (_passwordController.text.length < 6)
+      return 'Password must be at least 6 characters.';
+    if (_confirmPasswordController.text != _passwordController.text) {
+      return 'Passwords do not match.';
+    }
+    return null;
+  }
+
+  Future<void> _handleSignUp() async {
+    final error = _validate();
+    if (error != null) {
+      _showDialog('Validation Error', error);
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      await AuthService().register(
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+        email: _emailController.text.trim(),
+        phoneNumber: _phoneController.text.trim(),
+        password: _passwordController.text,
+        confirmPassword: _confirmPasswordController.text,
+        profileImage: _profileImageController.text.trim().isEmpty
+            ? null
+            : _profileImageController.text.trim(),
+        rolesRequest: [_selectedRole!],
+      );
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, '/sign-in');
+    } catch (e) {
+      print('Sign up failed: $e');
+      _showDialog('Sign Up Failed', e.toString().replaceAll('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showDialog(String title, String message) {
+    showCupertinoDialog(
+      context: context,
+      builder: (_) => CupertinoAlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          CupertinoDialogAction(
+            child: const Text('OK'),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
       ),
-      body: SafeArea(
+    );
+  }
+
+  void _showRolePicker() {
+    showCupertinoModalPopup<void>(
+      context: context,
+      builder: (_) => Container(
+        height: 280,
+        color: CupertinoColors.systemBackground,
         child: Column(
           children: [
-            // Header section with logo
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                CupertinoButton(
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(color: CupertinoColors.systemGrey),
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                CupertinoButton(
+                  child: const Text('Done', style: TextStyle(color: _green)),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+            Expanded(
+              child: CupertinoPicker(
+                scrollController: FixedExtentScrollController(
+                  initialItem: _selectedRole == null
+                      ? 0
+                      : _roles
+                            .indexOf(_selectedRole!)
+                            .clamp(0, _roles.length - 1),
+                ),
+                itemExtent: 40,
+                onSelectedItemChanged: (i) =>
+                    setState(() => _selectedRole = _roles[i]),
+                children: _roles.map((r) => Center(child: Text(r))).toList(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── Build ───────────────────────────────────────────────────────────────
+
+  @override
+  Widget build(BuildContext context) {
+    return CupertinoPageScaffold(
+      backgroundColor: _green,
+      child: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            // Back button row
+            Align(
+              alignment: Alignment.centerLeft,
+              child: CupertinoButton(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                onPressed: () =>
+                    Navigator.pushReplacementNamed(context, '/sign-in'),
+                child: const Icon(
+                  CupertinoIcons.arrow_left,
+                  color: CupertinoColors.white,
+                ),
+              ),
+            ),
+
+            // Header
             Expanded(
               flex: 2,
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      // ignore: deprecated_member_use
-                      color: Colors.white.withOpacity(0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.rocket_launch,
-                      size: 60,
-                      color: Colors.white,
-                    ),
+                  const Icon(
+                    CupertinoIcons.rocket_fill,
+                    size: 60,
+                    color: CupertinoColors.white,
                   ),
-                  const SizedBox(height: 16),
-                  const Text(
+                  const SizedBox(height: 12),
+                  Text(
                     'BrightFund',
-                    style: TextStyle(
-                      fontSize: 28,
+                    style: GoogleFonts.inter(
+                      fontSize: 32,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: CupertinoColors.white,
                     ),
                   ),
                 ],
               ),
             ),
-            // Form section with curved top
+
+            // Form card
             Expanded(
-              flex: 5,
+              flex: 8,
               child: Container(
                 decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(40),
-                    topRight: Radius.circular(40),
-                  ),
+                  color: CupertinoColors.systemBackground,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(40)),
                 ),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const SizedBox(height: 8),
-                        // Sign Up title
-                        const Text(
-                          'Sign Up',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+                  padding: const EdgeInsets.fromLTRB(24, 28, 24, 40),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Create Account',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Fill in the details below to get started',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          color: CupertinoColors.systemGrey,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // First Name & Last Name (row)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _FieldGroup(
+                              label: 'First Name',
+                              child: CupertinoTextField(
+                                controller: _firstNameController,
+                                placeholder: 'John',
+                                textCapitalization: TextCapitalization.words,
+                                padding: const EdgeInsets.all(14),
+                                decoration: _box(),
+                              ),
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        // Subtitle
-                        const Text(
-                          'Welcome back. Enter your credentials to access your account',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 13, color: Colors.grey),
-                        ),
-                        const SizedBox(height: 24),
-                        // Email Address field
-                        const Text(
-                          'Email Address',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _FieldGroup(
+                              label: 'Last Name',
+                              child: CupertinoTextField(
+                                controller: _lastNameController,
+                                placeholder: 'Doe',
+                                textCapitalization: TextCapitalization.words,
+                                padding: const EdgeInsets.all(14),
+                                decoration: _box(),
+                              ),
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        TextFormField(
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Email
+                      _FieldGroup(
+                        label: 'Email Address',
+                        required: true,
+                        child: CupertinoTextField(
                           controller: _emailController,
+                          placeholder: 'kong.chan@gmail.com',
                           keyboardType: TextInputType.emailAddress,
-                          decoration: InputDecoration(
-                            hintText: 'kong.chan@gmail.com',
-                            hintStyle: TextStyle(color: Colors.grey[400]),
-                            filled: true,
-                            fillColor: Colors.grey[50],
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                color: Color(0xFF2ECC71),
-                                width: 2,
-                              ),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 16,
+                          autocorrect: false,
+                          padding: const EdgeInsets.all(14),
+                          decoration: _box(),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Phone Number
+                      _FieldGroup(
+                        label: 'Phone Number',
+                        required: true,
+                        child: CupertinoTextField(
+                          controller: _phoneController,
+                          placeholder: '+855 12 345 678',
+                          keyboardType: TextInputType.phone,
+                          padding: const EdgeInsets.all(14),
+                          decoration: _box(),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Account Type picker
+                      _FieldGroup(
+                        label: 'Account Type',
+                        required: true,
+                        child: GestureDetector(
+                          onTap: _showRolePicker,
+                          child: Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: _box(),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    _selectedRole ?? 'Select account type',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      color: _selectedRole == null
+                                          ? CupertinoColors.placeholderText
+                                          : CupertinoColors.label.resolveFrom(
+                                              context,
+                                            ),
+                                    ),
+                                  ),
+                                ),
+                                const Icon(
+                                  CupertinoIcons.chevron_down,
+                                  size: 16,
+                                  color: CupertinoColors.systemGrey,
+                                ),
+                              ],
                             ),
                           ),
                         ),
-                        const SizedBox(height: 16),
-                        // Types dropdown
-                        const Text(
-                          'Types',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        DropdownButtonFormField<String>(
-                          initialValue: _selectedType,
-                          hint: Text(
-                            'Select a Types',
-                            style: TextStyle(color: Colors.grey[400]),
-                          ),
-                          decoration: InputDecoration(
-                            filled: true,
-                            fillColor: Colors.grey[50],
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                color: Color(0xFF2ECC71),
-                                width: 2,
-                              ),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 16,
-                            ),
-                          ),
-                          items: _types.map((String type) {
-                            return DropdownMenuItem<String>(
-                              value: type,
-                              child: Text(type),
-                            );
-                          }).toList(),
-                          onChanged: (String? newValue) {
-                            setState(() {
-                              _selectedType = newValue;
-                            });
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        // Password field
-                        const Text(
-                          'Password',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        TextFormField(
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Password
+                      _FieldGroup(
+                        label: 'Password',
+                        required: true,
+                        child: CupertinoTextField(
                           controller: _passwordController,
+                          placeholder: '••••••••',
                           obscureText: !_isPasswordVisible,
-                          decoration: InputDecoration(
-                            hintText: '••••••••••••••',
-                            hintStyle: TextStyle(color: Colors.grey[400]),
-                            filled: true,
-                            fillColor: Colors.grey[50],
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
+                          padding: const EdgeInsets.all(14),
+                          decoration: _box(),
+                          suffix: CupertinoButton(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            onPressed: () => setState(
+                              () => _isPasswordVisible = !_isPasswordVisible,
                             ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                color: Color(0xFF2ECC71),
-                                width: 2,
-                              ),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 16,
-                            ),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _isPasswordVisible
-                                    ? Icons.visibility_outlined
-                                    : Icons.visibility_off_outlined,
-                                color: Colors.grey[600],
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _isPasswordVisible = !_isPasswordVisible;
-                                });
-                              },
+                            child: Icon(
+                              _isPasswordVisible
+                                  ? CupertinoIcons.eye
+                                  : CupertinoIcons.eye_slash,
+                              color: CupertinoColors.systemGrey,
+                              size: 20,
                             ),
                           ),
                         ),
-                        const SizedBox(height: 16),
-                        // Confirm Password field
-                        const Text(
-                          'Confirm Password',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        TextFormField(
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Confirm Password
+                      _FieldGroup(
+                        label: 'Confirm Password',
+                        required: true,
+                        child: CupertinoTextField(
                           controller: _confirmPasswordController,
+                          placeholder: '••••••••',
                           obscureText: !_isConfirmPasswordVisible,
-                          decoration: InputDecoration(
-                            hintText: '••••••••••••••',
-                            hintStyle: TextStyle(color: Colors.grey[400]),
-                            filled: true,
-                            fillColor: Colors.grey[50],
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
+                          padding: const EdgeInsets.all(14),
+                          decoration: _box(),
+                          suffix: CupertinoButton(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            onPressed: () => setState(
+                              () => _isConfirmPasswordVisible =
+                                  !_isConfirmPasswordVisible,
                             ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                color: Color(0xFF2ECC71),
-                                width: 2,
-                              ),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 16,
-                            ),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _isConfirmPasswordVisible
-                                    ? Icons.visibility_outlined
-                                    : Icons.visibility_off_outlined,
-                                color: Colors.grey[600],
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _isConfirmPasswordVisible =
-                                      !_isConfirmPasswordVisible;
-                                });
-                              },
+                            child: Icon(
+                              _isConfirmPasswordVisible
+                                  ? CupertinoIcons.eye
+                                  : CupertinoIcons.eye_slash,
+                              color: CupertinoColors.systemGrey,
+                              size: 20,
                             ),
                           ),
                         ),
-                        const SizedBox(height: 24),
-                        // Sign Up button
-                        ElevatedButton(
-                          onPressed: () {
-                            // Handle sign up
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF2ECC71),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 0,
-                          ),
-                          child: const Text(
-                            'Sign Up',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        // Divider with text
-                        Row(
-                          children: [
-                            Expanded(child: Divider(color: Colors.grey[300])),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                              ),
-                              child: Text(
-                                'or sign up with',
+                      ),
+                      const SizedBox(height: 28),
+
+                      // Sign Up button
+                      CupertinoButton(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        borderRadius: BorderRadius.circular(12),
+                        color: _green,
+                        onPressed: _isLoading ? null : _handleSignUp,
+                        child: _isLoading
+                            ? const CupertinoActivityIndicator(
+                                color: CupertinoColors.white,
+                              )
+                            : const Text(
+                                'Create Account',
                                 style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 13,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: CupertinoColors.white,
                                 ),
                               ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Sign in link
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text(
+                            'Already have an account? ',
+                            style: TextStyle(color: CupertinoColors.systemGrey),
+                          ),
+                          CupertinoButton(
+                            padding: EdgeInsets.zero,
+                            onPressed: () => Navigator.pushReplacementNamed(
+                              context,
+                              '/sign-in',
                             ),
-                            Expanded(child: Divider(color: Colors.grey[300])),
-                          ],
+                            child: const Text(
+                              'Sign in',
+                              style: TextStyle(
+                                color: _green,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 8),
+                      const Center(
+                        child: Text(
+                          'or sign up with',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: CupertinoColors.systemGrey,
+                          ),
                         ),
-                        const SizedBox(height: 24),
-                        // Social login buttons
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            _SocialButton(
-                              icon: Icons.g_mobiledata,
-                              label: 'Google',
-                              onPressed: () {},
-                            ),
-                            const SizedBox(width: 12),
-                            _SocialButton(
-                              icon: Icons.apple,
-                              label: 'Apple',
-                              onPressed: () {},
-                            ),
-                            const SizedBox(width: 12),
-                            _SocialButton(
-                              icon: Icons.facebook,
-                              label: 'Facebook',
-                              onPressed: () {},
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Social buttons
+                      Row(
+                        children: [
+                          _SocialButton(
+                            icon: CupertinoIcons.globe,
+                            label: 'Google',
+                            color: CupertinoColors.systemRed,
+                            onPressed: () {},
+                          ),
+                          const SizedBox(width: 12),
+                          _SocialButton(
+                            icon: CupertinoIcons.app_badge_fill,
+                            label: 'Apple',
+                            color: CupertinoColors.black,
+                            onPressed: () {},
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -398,54 +478,96 @@ class _SignUpScreenState extends State<SignUpScreen> {
       ),
     );
   }
+
+  BoxDecoration _box() => BoxDecoration(
+    color: CupertinoColors.extraLightBackgroundGray,
+    borderRadius: BorderRadius.circular(12),
+    border: Border.all(color: CupertinoColors.systemGrey4),
+  );
 }
 
-class _SocialButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onPressed;
+// ─── Field Group ─────────────────────────────────────────────────────────────
 
+class _FieldGroup extends StatelessWidget {
+  const _FieldGroup({
+    required this.label,
+    required this.child,
+    this.required = false,
+  });
+
+  final String label;
+  final Widget child;
+  final bool required;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              label,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            ),
+            if (required)
+              const Text(
+                ' *',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: CupertinoColors.systemRed,
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        child,
+      ],
+    );
+  }
+}
+
+// ─── Social Button ────────────────────────────────────────────────────────────
+
+class _SocialButton extends StatelessWidget {
   const _SocialButton({
     required this.icon,
     required this.label,
+    required this.color,
     required this.onPressed,
   });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: OutlinedButton(
-        onPressed: onPressed,
-        style: OutlinedButton.styleFrom(
+      child: GestureDetector(
+        onTap: onPressed,
+        child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
-          side: BorderSide(color: Colors.grey[300]!),
-          shape: RoundedRectangleBorder(
+          decoration: BoxDecoration(
+            border: Border.all(color: CupertinoColors.systemGrey4),
             borderRadius: BorderRadius.circular(12),
           ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: icon == Icons.g_mobiledata
-                  ? Colors.red
-                  : icon == Icons.apple
-                  ? Colors.black
-                  : const Color(0xFF1877F2),
-              size: 24,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.black87,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: color, size: 22),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

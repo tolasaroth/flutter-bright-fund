@@ -1,20 +1,25 @@
 import 'package:flutter/material.dart';
-import 'sign_in_screen.dart';
+import 'package:gofundme/screens/auth/sign_in_screen.dart';
 
-class ForgetPasswordScreen extends StatefulWidget {
-  const ForgetPasswordScreen({super.key});
+class NewPasswordScreen extends StatefulWidget {
+  const NewPasswordScreen({super.key});
 
   @override
-  State<ForgetPasswordScreen> createState() => _ForgetPasswordScreenState();
+  State<NewPasswordScreen> createState() => _NewPasswordScreenState();
 }
 
-class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
+class _NewPasswordScreenState extends State<NewPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _newPasswordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+
+  bool _isNewPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -30,7 +35,9 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
           onPressed: () {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const SignInScreen()),
+              MaterialPageRoute(
+                builder: (context) => const SignInScreen(),
+              ),
             );
           },
         ),
@@ -88,9 +95,9 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         const SizedBox(height: 8),
-                        // Forget Password title
+                        // New Password title
                         const Text(
-                          'Forget Password',
+                          'New Password',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 24,
@@ -106,9 +113,9 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
                           style: TextStyle(fontSize: 13, color: Colors.grey),
                         ),
                         const SizedBox(height: 32),
-                        // Enter Your Email label
+                        // New Password label
                         const Text(
-                          'Enter Your Email',
+                          'New Password',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -116,12 +123,12 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        // Email field
+                        // New Password field
                         TextFormField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
+                          controller: _newPasswordController,
+                          obscureText: !_isNewPasswordVisible,
                           decoration: InputDecoration(
-                            hintText: 'kong.chan@gmail.com',
+                            hintText: '••••••••••••••',
                             hintStyle: TextStyle(color: Colors.grey[400]),
                             filled: true,
                             fillColor: Colors.grey[50],
@@ -144,13 +151,82 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
                               horizontal: 16,
                               vertical: 16,
                             ),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _isNewPasswordVisible
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
+                                color: Colors.grey[600],
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _isNewPasswordVisible =
+                                      !_isNewPasswordVisible;
+                                });
+                              },
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        // Confirm Password label
+                        const Text(
+                          'Confirm Password',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        // Confirm Password field
+                        TextFormField(
+                          controller: _confirmPasswordController,
+                          obscureText: !_isConfirmPasswordVisible,
+                          decoration: InputDecoration(
+                            hintText: '••••••••••••••',
+                            hintStyle: TextStyle(color: Colors.grey[400]),
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                color: Color(0xFF2ECC71),
+                                width: 2,
+                              ),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 16,
+                            ),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _isConfirmPasswordVisible
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
+                                color: Colors.grey[600],
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _isConfirmPasswordVisible =
+                                      !_isConfirmPasswordVisible;
+                                });
+                              },
+                            ),
                           ),
                         ),
                         const SizedBox(height: 24),
-                        // Send button
+                        // Submit button
                         ElevatedButton(
                           onPressed: () {
-                            // Handle send reset email
+                            // Handle password reset
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF2ECC71),
@@ -162,44 +238,12 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
                             elevation: 0,
                           ),
                           child: const Text(
-                            'Send',
+                            'Submit',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        // Back to Sign In link
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Back to  ',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[700],
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                              style: TextButton.styleFrom(
-                                padding: EdgeInsets.zero,
-                                minimumSize: Size.zero,
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              ),
-                              child: const Text(
-                                'Sign In',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFF2ECC71),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
                         ),
                       ],
                     ),

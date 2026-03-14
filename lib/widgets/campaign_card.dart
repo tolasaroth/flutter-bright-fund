@@ -85,7 +85,7 @@ class CampaignCard extends StatelessWidget {
                         ),
                       );
                     },
-                    errorBuilder: (context, _, __) => Container(
+                    errorBuilder: (context, _, _) => Container(
                       height: 175,
                       color: CupertinoColors.systemGrey5,
                       child: const Center(
@@ -231,7 +231,7 @@ class CampaignCard extends StatelessWidget {
                                 width: 28,
                                 height: 28,
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) =>
+                                errorBuilder: (_, _, _) =>
                                     _placeholderAvatar(),
                               )
                             : _placeholderAvatar(),

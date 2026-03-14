@@ -32,7 +32,7 @@ class BrightFund extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: const CupertinoThemeData(
         brightness: Brightness.light,
-        primaryColor: CupertinoColors.activeBlue,
+        primaryColor:  CupertinoColors.activeBlue,
         primaryContrastingColor: CupertinoColors.white,
         barBackgroundColor: CupertinoColors.systemBackground,
       ),

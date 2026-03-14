@@ -211,7 +211,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                             child: CupertinoActivityIndicator(),
                           ),
                         ),
-                  errorBuilder: (_, __, ___) => Container(
+                  errorBuilder: (_, _, _) => Container(
                     height: 200,
                     color: AppColors.lightGreen,
                     child: const Center(
@@ -935,7 +935,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
         width: size,
         height: size,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => Container(
+        errorBuilder: (_, _, _) => Container(
           width: size,
           height: size,
           color: AppColors.lightGreen,
@@ -992,7 +992,7 @@ class _UpdateItem extends StatelessWidget {
                   width: 36,
                   height: 36,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
+                  errorBuilder: (_, _, _) => Container(
                     width: 36,
                     height: 36,
                     color: AppColors.lightGreen,
@@ -1105,7 +1105,7 @@ class _DonationItem extends StatelessWidget {
                   width: 42,
                   height: 42,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
+                  errorBuilder: (_, _, _) => Container(
                     width: 42,
                     height: 42,
                     decoration: BoxDecoration(
@@ -1231,7 +1231,7 @@ class _SupportItem extends StatelessWidget {
               width: 44,
               height: 44,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
+              errorBuilder: (_, _, _) => Container(
                 width: 44,
                 height: 44,
                 color: AppColors.lightGreen,

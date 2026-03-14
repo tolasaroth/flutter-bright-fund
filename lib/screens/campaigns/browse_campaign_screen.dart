@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:flutter/cupertino.dart';
 import 'package:gofundme/screens/campaigns/campaign_detail_screen.dart';
 import 'package:gofundme/widgets/app_search_bar.dart';
@@ -90,6 +92,8 @@ class _BrowseCampaignScreenState extends State<BrowseCampaignScreen> {
         child: Column(
           children: [
             AppSearchBar(
+              // ignore: duplicate_ignore
+              // ignore: avoid_print
               onSearchChanged: (query) => print(query),
               onCategorySelected: (cat) => print(cat),
             ),

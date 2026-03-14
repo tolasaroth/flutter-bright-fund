@@ -11,6 +11,7 @@ class AuthGuard extends StatelessWidget {
   Widget build(BuildContext context) {
     if (!authService.isLoggedIn) {
       Future.microtask(() {
+        // ignore: use_build_context_synchronously
         Navigator.pushReplacementNamed(context, '/login');
       });
       return const SizedBox.shrink();

@@ -37,6 +37,7 @@ dependencies:
   google_fonts: ^6.1.0
   http: ^1.2.0
   flutter_dotenv: ^5.1.0
+  flutter_svg: ^2.0.10
   lucide_icons: ^0.257.0
   cupertino_native: ^0.1.1
   shadcn_flutter: ^0.0.52
@@ -60,6 +61,9 @@ dev_dependencies:
 flutter:
   assets:
     - .env
+    - assets/logo/brightfund_logo.svg
+    - assets/icon/google.png
+    - assets/icon/apple.png
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.

@@ -252,7 +252,7 @@ class _AppSearchBarState extends State<AppSearchBar> with SingleTickerProviderSt
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           itemCount: widget.categories.length,
-          separatorBuilder: (_, __) => const SizedBox(width: 7),
+          separatorBuilder: (_, _) => const SizedBox(width: 7),
           itemBuilder: (context, index) {
             final category = widget.categories[index];
             final isSelected = category == _selectedCategory;

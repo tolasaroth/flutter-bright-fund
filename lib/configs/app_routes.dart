@@ -1,4 +1,5 @@
 class AppRoutes {
+  static const root = '/';
   static const signIn = '/sign-in';
   static const signUp = '/sign-up';
   static const forgetPassword = '/forget-password';

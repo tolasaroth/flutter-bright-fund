@@ -62,6 +62,7 @@ flutter:
   assets:
     - .env
     - assets/logo/brightfund_logo.svg
+    - assets/logo/brightfund_logo_horizotal.svg
     - assets/icon/google.png
     - assets/icon/apple.png
   # The following line ensures that the Material Icons font is

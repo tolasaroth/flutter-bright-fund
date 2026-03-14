@@ -9,12 +9,14 @@ class AppNavigationBar extends StatelessWidget
     this.onAddPressed,
     this.showAddButton = true,
     this.trailing,
+    this.leading,
   });
 
   final String title;
   final VoidCallback? onAddPressed;
   final bool showAddButton;
   final Widget? trailing;
+  final Widget? leading;
 
   @override
   Size get preferredSize => const Size.fromHeight(44);
@@ -36,7 +38,8 @@ class AppNavigationBar extends StatelessWidget
           width: 0.5,
         ),
       ),
-      leading: null,
+      automaticallyImplyLeading: leading == null,
+      leading: leading,
       middle: Text(
         title,
         style: const TextStyle(
@@ -45,7 +48,7 @@ class AppNavigationBar extends StatelessWidget
           letterSpacing: -0.4,
         ),
       ),
-      
+      trailing: trailing,
     );
   }
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:gofundme/utils/colors.dart';
 
 class AppSearchBar extends StatefulWidget implements PreferredSizeWidget {
   final String title;
@@ -34,8 +36,8 @@ class AppSearchBar extends StatefulWidget implements PreferredSizeWidget {
   State<AppSearchBar> createState() => _AppSearchBarState();
 }
 
-class _AppSearchBarState extends State<AppSearchBar> with SingleTickerProviderStateMixin {
-  
+class _AppSearchBarState extends State<AppSearchBar>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
 
   final FocusNode _focusNode = FocusNode();
@@ -86,7 +88,7 @@ class _AppSearchBarState extends State<AppSearchBar> with SingleTickerProviderSt
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         border: Border(
           bottom: BorderSide(color: Color(0x12000000), width: 0.5),
         ),
@@ -109,7 +111,7 @@ class _AppSearchBarState extends State<AppSearchBar> with SingleTickerProviderSt
 
   Widget _buildTitleRow() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 16, 12),
+      padding: const EdgeInsets.fromLTRB(20, 16, 16, 0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -127,23 +129,33 @@ class _AppSearchBarState extends State<AppSearchBar> with SingleTickerProviderSt
                     letterSpacing: 0.8,
                   ),
                 ),
-                const SizedBox(height: 2),
-                ShaderMask(
-                  shaderCallback: (bounds) => const LinearGradient(
-                    colors: [_label, Color(0xFF3A3A3C)],
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                  ).createShader(bounds),
-                  child: Text(
-                    widget.title,
-                    style: const TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w800,
-                      color: _blue,
-                      letterSpacing: 0.5,
-                      height: 1.05,
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 28,
+                      height: 70,
+                      child: SvgPicture.asset(
+                        'assets/logo/brightfund_logo_horizotal.svg',
+                        fit: BoxFit.fitHeight,
+                        alignment: Alignment.centerLeft,
+                      ),
                     ),
-                  ),
+
+                    Text(
+                      widget.title,
+                      // overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        color: _label,
+                        letterSpacing: 0.2,
+                        height: 1.05,
+                      ),
+                    ),
+                    // ),
+                  ],
                 ),
               ],
             ),

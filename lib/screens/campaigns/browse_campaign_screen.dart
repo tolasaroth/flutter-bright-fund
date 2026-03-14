@@ -5,6 +5,7 @@ import 'package:gofundme/screens/campaigns/campaign_detail_screen.dart';
 import 'package:gofundme/widgets/app_search_bar.dart';
 export 'package:gofundme/widgets/campaign_tile.dart';
 import 'package:gofundme/widgets/campaign_card.dart';
+import 'package:gofundme/utils/colors.dart';
 
 class BrowseCampaignScreen extends StatefulWidget {
   const BrowseCampaignScreen({super.key});
@@ -88,6 +89,7 @@ class _BrowseCampaignScreenState extends State<BrowseCampaignScreen> {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
+      backgroundColor: AppColors.surface,
       child: SafeArea(
         child: Column(
           children: [

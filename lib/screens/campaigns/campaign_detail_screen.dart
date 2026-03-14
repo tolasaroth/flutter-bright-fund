@@ -119,6 +119,18 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
       navigationBar: AppNavigationBar(
         title: 'Campaign Detail',
         showAddButton: false,
+        leading: GestureDetector(
+          onTap: () => Navigator.maybePop(context),
+          child: const SizedBox(
+            width: 44,
+            height: 44,
+            child: Icon(
+              CupertinoIcons.back,
+              color: CupertinoColors.activeBlue,
+              size: 34,
+            ),
+          ),
+        ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

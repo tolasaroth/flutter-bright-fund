@@ -2,12 +2,13 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'configs/app_routes.dart';
+import 'package:gofundme/utils/colors.dart';
 
 import 'package:gofundme/screens/auth/sign_in_screen.dart';
 import 'package:gofundme/screens/auth/sign_up_screen.dart';
 import 'package:gofundme/screens/auth/forget_password_screen.dart';
 import 'package:gofundme/screens/layout/main_layout.dart';
-
+import 'package:gofundme/screens/auth/welcome_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,7 +23,6 @@ void main() async {
 }
 
 class BrightFund extends StatelessWidget {
-  
   const BrightFund({super.key});
 
   @override
@@ -32,29 +32,26 @@ class BrightFund extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: const CupertinoThemeData(
         brightness: Brightness.light,
-        primaryColor:  CupertinoColors.activeBlue,
-        primaryContrastingColor: CupertinoColors.white,
+        primaryColor: AppColors.surface,
+        primaryContrastingColor: CupertinoColors.activeBlue,
         barBackgroundColor: CupertinoColors.systemBackground,
       ),
 
-      initialRoute: AppRoutes.home,
+      initialRoute: AppRoutes.root,
 
       onGenerateRoute: (RouteSettings settings) {
         switch (settings.name) {
           case AppRoutes.home:
-            return CupertinoPageRoute(
-              builder: (_) => const MainLayout(),
-            );
+            return CupertinoPageRoute(builder: (_) => const MainLayout());
+
+          case AppRoutes.root:
+            return CupertinoPageRoute(builder: (_) => const WelcomeScreen());
 
           case AppRoutes.signIn:
-            return CupertinoPageRoute(
-              builder: (_) => const SignInScreen(),
-            );
+            return CupertinoPageRoute(builder: (_) => const SignInScreen());
 
           case AppRoutes.signUp:
-            return CupertinoPageRoute(
-              builder: (_) => const SignUpScreen(),
-            );
+            return CupertinoPageRoute(builder: (_) => const SignUpScreen());
 
           case AppRoutes.forgetPassword:
             return CupertinoPageRoute(
@@ -62,9 +59,7 @@ class BrightFund extends StatelessWidget {
             );
 
           default:
-            return CupertinoPageRoute(
-              builder: (_) => const SignInScreen(),
-            );
+            return CupertinoPageRoute(builder: (_) => const SignInScreen());
         }
       },
     );

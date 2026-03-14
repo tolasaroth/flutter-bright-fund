@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:gofundme/services/auth_service.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:gofundme/utils/colors.dart';
 
 // ─── Design Tokens ────────────────────────────────────────────────────────────
 class _C {
@@ -232,7 +233,7 @@ class _SignUpScreenState extends State<SignUpScreen>
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.white,
+      backgroundColor: AppColors.surface,
       navigationBar: _buildTopBar(),
       child: SafeArea(
         top: false,
@@ -250,8 +251,8 @@ class _SignUpScreenState extends State<SignUpScreen>
 
   ObstructingPreferredSizeWidget _buildTopBar() {
     return CupertinoNavigationBar(
-      backgroundColor: CupertinoColors.systemBackground
-          .resolveFrom(context)
+      backgroundColor: AppColors.surface
+          // .resolveFrom(context)
           .withValues(alpha: 0.85),
       border: Border(
         bottom: BorderSide(
@@ -325,7 +326,7 @@ class _SignUpScreenState extends State<SignUpScreen>
         ),
         const SizedBox(height: 10),
         Text(
-          'Join to raise, support, and manage campaigns in one place.',
+          'Start, support, and manage campaigns easily.',
           textAlign: TextAlign.center,
           style: GoogleFonts.poppins(
             fontSize: 13.5,

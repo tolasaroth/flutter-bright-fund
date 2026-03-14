@@ -14,6 +14,7 @@ class MenuBar extends StatelessWidget {
     return CupertinoTabScaffold(
       tabBar: CupertinoTabBar(
         height: 95,
+        activeColor: CupertinoColors.activeBlue,
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Column(
@@ -21,11 +22,8 @@ class MenuBar extends StatelessWidget {
               children: [
                 Icon(LucideIcons.search),
                 Padding(
-                  padding: EdgeInsets.only(top: 5, bottom: 15), 
-                  child: Text(
-                    'Browse',
-                    style: TextStyle(fontSize: 13),
-                  ),
+                  padding: EdgeInsets.only(top: 5, bottom: 15),
+                  child: Text('Browse', style: TextStyle(fontSize: 13)),
                 ),
               ],
             ),
@@ -37,11 +35,8 @@ class MenuBar extends StatelessWidget {
               children: [
                 Icon(LucideIcons.building2),
                 Padding(
-                  padding: EdgeInsets.only(top: 5, bottom: 15), 
-                  child: Text(
-                    'Campaigns',
-                    style: TextStyle(fontSize: 13),
-                  ),
+                  padding: EdgeInsets.only(top: 5, bottom: 15),
+                  child: Text('Campaigns', style: TextStyle(fontSize: 13)),
                 ),
               ],
             ),
@@ -53,11 +48,8 @@ class MenuBar extends StatelessWidget {
               children: [
                 Icon(LucideIcons.bell),
                 Padding(
-                  padding: EdgeInsets.only(top: 5, bottom: 15), 
-                  child: Text(
-                    'Notifications',
-                    style: TextStyle(fontSize: 13),
-                  ),
+                  padding: EdgeInsets.only(top: 5, bottom: 15),
+                  child: Text('Notifications', style: TextStyle(fontSize: 13)),
                 ),
               ],
             ),
@@ -69,11 +61,8 @@ class MenuBar extends StatelessWidget {
               children: [
                 Icon(LucideIcons.settings),
                 Padding(
-                  padding: EdgeInsets.only(top: 5, bottom: 15), 
-                  child: Text(
-                    'Settings',
-                    style: TextStyle(fontSize: 13),
-                  ),
+                  padding: EdgeInsets.only(top: 5, bottom: 15),
+                  child: Text('Settings', style: TextStyle(fontSize: 13)),
                 ),
               ],
             ),
@@ -85,11 +74,8 @@ class MenuBar extends StatelessWidget {
               children: [
                 Icon(LucideIcons.userCircle2),
                 Padding(
-                  padding: EdgeInsets.only(top: 5, bottom: 15), 
-                  child: Text(
-                    'Profile',
-                    style: TextStyle(fontSize: 13),
-                  ),
+                  padding: EdgeInsets.only(top: 5, bottom: 15),
+                  child: Text('Profile', style: TextStyle(fontSize: 13)),
                 ),
               ],
             ),

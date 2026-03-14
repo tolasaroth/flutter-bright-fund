@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:gofundme/services/auth_service.dart';
 import 'forget_password_screen.dart';
+import 'package:gofundme/utils/colors.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 // ─── Design Tokens (shared with SignUpScreen) ─────────────────────────────────
@@ -108,7 +109,7 @@ class _SignInScreenState extends State<SignInScreen>
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.white,
+      backgroundColor: AppColors.surface,
       child: SafeArea(
         bottom: false,
         child: FadeTransition(
@@ -128,14 +129,10 @@ class _SignInScreenState extends State<SignInScreen>
 
   ObstructingPreferredSizeWidget _buildTopBar() {
     return CupertinoNavigationBar(
-      backgroundColor: CupertinoColors.systemBackground
-          .resolveFrom(context)
-          .withValues(alpha: 0.85),
+      backgroundColor: CupertinoColors.systemBackground.resolveFrom(context).withValues(alpha: 0.85),
       border: Border(
         bottom: BorderSide(
-          color: CupertinoColors.separator
-              .resolveFrom(context)
-              .withValues(alpha: 0.3),
+          color: CupertinoColors.separator.resolveFrom(context).withValues(alpha: 0.3),
           width: 0.5,
         ),
       ),
@@ -145,7 +142,7 @@ class _SignInScreenState extends State<SignInScreen>
           final didPop = await Navigator.maybePop(context);
           if (!didPop && context.mounted) {
             // ignore: use_build_context_synchronously
-            Navigator.pushReplacementNamed(context, '/sign-in');
+            Navigator.pushReplacementNamed(context, '/');
           }
         },
         child: const SizedBox(

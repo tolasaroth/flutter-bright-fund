@@ -1,5 +1,3 @@
-// ignore_for_file: avoid_print
-
 import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:gofundme/services/auth_service.dart';
@@ -12,6 +10,7 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
+  
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -24,6 +23,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool _isConfirmPasswordVisible = false;
   String? _selectedRole;
   bool _isLoading = false;
+  bool _agreedToTerms = false;
 
   static const _roles = [
     'Individual',
@@ -32,7 +32,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     'Investor',
     'Non-Profit',
   ];
-  static const _green = Color(0xFF2ECC71);
 
   @override
   void dispose() {
@@ -49,21 +48,31 @@ class _SignUpScreenState extends State<SignUpScreen> {
   // ─── Validation ─────────────────────────────────────────────────────────
 
   String? _validate() {
-    if (_firstNameController.text.trim().isEmpty)
+    if (_firstNameController.text.trim().isEmpty) {
       return 'First name is required.';
-    if (_lastNameController.text.trim().isEmpty)
+    }
+    if (_lastNameController.text.trim().isEmpty) {
       return 'Last name is required.';
-    if (_emailController.text.trim().isEmpty) return 'Email is required.';
-    if (!_emailController.text.contains('@'))
+    }
+    if (_emailController.text.trim().isEmpty) {
+      return 'Email is required.';
+    }
+    if (!_emailController.text.contains('@')) {
       return 'Enter a valid email address.';
-    if (_phoneController.text.trim().isEmpty)
+    }
+    if (_phoneController.text.trim().isEmpty) {
       return 'Phone number is required.';
+    }
     if (_selectedRole == null) return 'Please select an account type.';
     if (_passwordController.text.isEmpty) return 'Password is required.';
-    if (_passwordController.text.length < 6)
+    if (_passwordController.text.length < 6) {
       return 'Password must be at least 6 characters.';
+    }
     if (_confirmPasswordController.text != _passwordController.text) {
       return 'Passwords do not match.';
+    }
+    if (!_agreedToTerms) {
+      return 'Please agree to the Terms & Privacy Policy.';
     }
     return null;
   }
@@ -134,7 +143,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   onPressed: () => Navigator.pop(context),
                 ),
                 CupertinoButton(
-                  child: const Text('Done', style: TextStyle(color: _green)),
+                  child: const Text(
+                    'Done',
+                    style: TextStyle(color: CupertinoColors.activeBlue),
+                  ),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
@@ -165,7 +177,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      backgroundColor: _green,
+      backgroundColor: const Color(0xFFF6F6F6),
       child: SafeArea(
         bottom: false,
         child: Column(
@@ -173,51 +185,69 @@ class _SignUpScreenState extends State<SignUpScreen> {
             // Back button row
             Align(
               alignment: Alignment.centerLeft,
-              child: CupertinoButton(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                onPressed: () =>
-                    Navigator.pushReplacementNamed(context, '/sign-in'),
-                child: const Icon(
-                  CupertinoIcons.arrow_left,
-                  color: CupertinoColors.white,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 12, top: 4),
+                child: CupertinoButton(
+                  minSize: 44,
+                  padding: EdgeInsets.zero,
+                  onPressed: () async {
+                    final didPop = await Navigator.maybePop(context);
+                    if (!didPop && context.mounted) {
+                      Navigator.pushReplacementNamed(context, '/sign-in');
+                    }
+                  },
+                  child: Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: CupertinoColors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: CupertinoColors.systemGrey4),
+                    ),
+                    child: const Icon(
+                      CupertinoIcons.back,
+                      color: CupertinoColors.activeBlue,
+                      size: 20,
+                    ),
+                  ),
                 ),
               ),
             ),
 
             // Header
-            Expanded(
-              flex: 2,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    CupertinoIcons.rocket_fill,
-                    size: 60,
-                    color: CupertinoColors.white,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'BrightFund',
-                    style: GoogleFonts.inter(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: CupertinoColors.white,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            // Expanded(
+            //   flex: 2,
+            //   child: Column(
+            //     mainAxisAlignment: MainAxisAlignment.center,
+            //     children: [
+            //       const Icon(
+            //         CupertinoIcons.rocket_fill,
+            //         size: 60,
+            //         color: CupertinoColors.white,
+            //       ),
+            //       const SizedBox(height: 12),
+            //       Text(
+            //         'BrightFund',
+            //         style: GoogleFonts.inter(
+            //           fontSize: 32,
+            //           fontWeight: FontWeight.bold,
+            //           color: const Color(0xFFF6F6F6),
+            //         ),
+            //       ),
+            //     ],
+            //   ),
+            // ),
 
             // Form card
             Expanded(
               flex: 8,
               child: Container(
                 decoration: const BoxDecoration(
-                  color: CupertinoColors.systemBackground,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(40)),
+                  color: Color(0xFFF6F6F6),
+                  // borderRadius: BorderRadius.vertical(top: Radius.circular(40)),
                 ),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(24, 28, 24, 40),
+                  padding: const EdgeInsets.fromLTRB(24, 80, 24, 40),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -248,7 +278,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               label: 'First Name',
                               child: CupertinoTextField(
                                 controller: _firstNameController,
-                                placeholder: 'John',
+                                placeholder: 'First name',
                                 textCapitalization: TextCapitalization.words,
                                 padding: const EdgeInsets.all(14),
                                 decoration: _box(),
@@ -261,7 +291,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               label: 'Last Name',
                               child: CupertinoTextField(
                                 controller: _lastNameController,
-                                placeholder: 'Doe',
+                                placeholder: 'Last name',
                                 textCapitalization: TextCapitalization.words,
                                 padding: const EdgeInsets.all(14),
                                 decoration: _box(),
@@ -278,7 +308,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         required: true,
                         child: CupertinoTextField(
                           controller: _emailController,
-                          placeholder: 'kong.chan@gmail.com',
+                          placeholder: 'example@gmail.com',
                           keyboardType: TextInputType.emailAddress,
                           autocorrect: false,
                           padding: const EdgeInsets.all(14),
@@ -303,7 +333,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                       // Account Type picker
                       _FieldGroup(
-                        label: 'Account Type',
+                        label: 'Type',
                         required: true,
                         child: GestureDetector(
                           onTap: _showRolePicker,
@@ -343,7 +373,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         required: true,
                         child: CupertinoTextField(
                           controller: _passwordController,
-                          placeholder: '••••••••',
+                          placeholder: 'New password',
                           obscureText: !_isPasswordVisible,
                           padding: const EdgeInsets.all(14),
                           decoration: _box(),
@@ -370,7 +400,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         required: true,
                         child: CupertinoTextField(
                           controller: _confirmPasswordController,
-                          placeholder: '••••••••',
+                          placeholder: 'Confirm password',
                           obscureText: !_isConfirmPasswordVisible,
                           padding: const EdgeInsets.all(14),
                           decoration: _box(),
@@ -390,13 +420,31 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 28),
+                      // const SizedBox(height: 28),
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Row(
+                          children: [
+                            CupertinoSwitch(
+                              value: _agreedToTerms,
+                              activeTrackColor: CupertinoColors.activeBlue,
+                              onChanged: (value) {
+                                setState(() => _agreedToTerms = value);
+                              },
+                            ),
+                            Text(
+                              'I agree to the Terms & Privacy Policy',
+                              style: GoogleFonts.poppins(fontSize: 13),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
 
-                      // Sign Up button
                       CupertinoButton(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        borderRadius: BorderRadius.circular(12),
-                        color: _green,
+                        borderRadius: BorderRadius.circular(20),
+                        color: CupertinoColors.activeBlue,
                         onPressed: _isLoading ? null : _handleSignUp,
                         child: _isLoading
                             ? const CupertinoActivityIndicator(
@@ -422,7 +470,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             style: TextStyle(color: CupertinoColors.systemGrey),
                           ),
                           CupertinoButton(
-                            padding: EdgeInsets.zero,
+                            padding: EdgeInsets.all(5),
                             onPressed: () => Navigator.pushReplacementNamed(
                               context,
                               '/sign-in',
@@ -430,41 +478,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             child: const Text(
                               'Sign in',
                               style: TextStyle(
-                                color: _green,
+                                color: CupertinoColors.activeBlue,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 8),
-                      const Center(
-                        child: Text(
-                          'or sign up with',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: CupertinoColors.systemGrey,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Social buttons
-                      Row(
-                        children: [
-                          _SocialButton(
-                            icon: CupertinoIcons.globe,
-                            label: 'Google',
-                            color: CupertinoColors.systemRed,
-                            onPressed: () {},
-                          ),
-                          const SizedBox(width: 12),
-                          _SocialButton(
-                            icon: CupertinoIcons.app_badge_fill,
-                            label: 'Apple',
-                            color: CupertinoColors.black,
-                            onPressed: () {},
                           ),
                         ],
                       ),
@@ -480,8 +497,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   BoxDecoration _box() => BoxDecoration(
-    color: CupertinoColors.extraLightBackgroundGray,
-    borderRadius: BorderRadius.circular(12),
+    color: CupertinoColors.white,
+    borderRadius: BorderRadius.circular(20),
     border: Border.all(color: CupertinoColors.systemGrey4),
   );
 }
@@ -524,52 +541,6 @@ class _FieldGroup extends StatelessWidget {
         const SizedBox(height: 8),
         child,
       ],
-    );
-  }
-}
-
-// ─── Social Button ────────────────────────────────────────────────────────────
-
-class _SocialButton extends StatelessWidget {
-  const _SocialButton({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onPressed,
-  });
-
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onPressed,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            border: Border.all(color: CupertinoColors.systemGrey4),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: color, size: 22),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

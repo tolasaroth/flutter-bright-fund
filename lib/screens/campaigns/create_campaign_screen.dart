@@ -109,6 +109,7 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
   final _accountNumberCtrl = TextEditingController();
 
   String? _selectedCategoryId;
+  String _selectedStatus = 'active';
   DateTime _endDate = DateTime.now().add(const Duration(days: 30));
   bool _hasDeadline = true;
   bool _hasCoverImage = false;
@@ -434,6 +435,19 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
                       ),
                       const SizedBox(height: 24),
                     ],
+
+                    _FieldGroup(
+                      label: 'Status',
+                      child: _StatusSelector(
+                        selectedStatus: _selectedStatus,
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() => _selectedStatus = value);
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 24),
 
                     _FieldGroup(
                       label: 'Category *',
@@ -787,6 +801,73 @@ class _SwitchField extends StatelessWidget {
             onChanged: onChanged,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _StatusSelector extends StatelessWidget {
+  const _StatusSelector({
+    required this.selectedStatus,
+    required this.onChanged,
+  });
+
+  final String selectedStatus;
+  final ValueChanged<String?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 150),
+      width: double.infinity,
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: CupertinoColors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _C.border, width: 1.5),
+      ),
+      child: SizedBox(
+        width: double.infinity,
+        child: CupertinoSlidingSegmentedControl<String>(
+          groupValue: selectedStatus,
+          children: {
+            'active': Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                'Active',
+                style: GoogleFonts.dmSans(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: _C.green,
+                ),
+              ),
+            ),
+            'paused': Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                'Paused',
+                style: GoogleFonts.dmSans(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: CupertinoColors.systemRed,
+                ),
+              ),
+            ),
+            'completed': Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                'Completed',
+                style: GoogleFonts.dmSans(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: _C.accent,
+                ),
+              ),
+            ),
+          },
+          thumbColor: const Color(0xFFF2EEE8),
+          onValueChanged: onChanged,
+        ),
       ),
     );
   }

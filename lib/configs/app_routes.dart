@@ -10,4 +10,5 @@ class AppRoutes {
   static const campaignDetail = '/campaign-detail';
   static const campaignManagement = '/campaign-management';
   static const createCampaign = '/create-campaign';
+  static const donation = '/donation';
 }

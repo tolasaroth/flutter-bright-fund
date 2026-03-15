@@ -67,7 +67,7 @@ const _kMyCampaigns = [
     'goal': 10000.0,
     'donors': 0,
     'daysLeft': 30,
-    'status': 'draft',
+    'status': 'paused',
     'organizerName': 'Alice Kim',
     'organizerImageUrl': 'https://i.pravatar.cc/50?img=7',
     'createdAt': 'Mar 12, 2026',
@@ -84,7 +84,7 @@ class MyCampaignScreen extends StatefulWidget {
 }
 
 class _MyCampaignScreenState extends State<MyCampaignScreen> {
-  int _selectedFilter = 0; // 0=All 1=Active 2=Completed 3=Draft
+  int _selectedFilter = 0; // 0=All 1=Active 2=Completed 3=Paused
 
   late final List<Map<String, dynamic>> _campaigns;
 
@@ -96,7 +96,7 @@ class _MyCampaignScreenState extends State<MyCampaignScreen> {
         .toList();
   }
 
-  static const _filters = ['All', 'Active', 'Completed', 'Draft'];
+  static const _filters = ['All', 'Active', 'Paused', 'Completed'];
   static const _shadow = BoxShadow(
     color: Color(0x0A000000),
     blurRadius: 12,

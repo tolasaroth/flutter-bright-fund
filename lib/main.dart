@@ -10,6 +10,7 @@ import 'package:gofundme/screens/auth/forget_password_screen.dart';
 import 'package:gofundme/screens/layout/main_layout.dart';
 import 'package:gofundme/screens/auth/welcome_screen.dart';
 import 'package:gofundme/screens/campaigns/create_campaign_screen.dart';
+import 'package:gofundme/screens/campaigns/donation_screen.dart';
 
 void main() async {
   
@@ -43,6 +44,7 @@ class BrightFund extends StatelessWidget {
 
       onGenerateRoute: (RouteSettings settings) {
         switch (settings.name) {
+          
           case AppRoutes.home: return CupertinoPageRoute(builder: (_) => const MainLayout());
 
           case AppRoutes.root: return CupertinoPageRoute(builder: (_) => const WelcomeScreen());
@@ -54,6 +56,8 @@ class BrightFund extends StatelessWidget {
           case AppRoutes.forgetPassword: return CupertinoPageRoute(builder: (_) => const ForgetPasswordScreen());
 
           case AppRoutes.createCampaign: return CupertinoPageRoute(builder: (_) => const CreateCampaignScreen());
+
+          case AppRoutes.donation: return CupertinoPageRoute(builder: (_) => const DonationScreen());
 
           default:
             return CupertinoPageRoute(builder: (_) => const SignInScreen());

@@ -16,14 +16,11 @@ class MenuBar extends StatelessWidget {
         height: 95,
         activeColor: CupertinoColors.activeBlue,
         inactiveColor: CupertinoColors.systemGrey,
-        // Translucent background enables iOS blur for a glass effect.
-        backgroundColor: CupertinoColors.systemBackground.withValues(
-          alpha: 0.25,
-        ),
+        backgroundColor: CupertinoColors.white,
         border: Border(
           top: BorderSide(
-            color: CupertinoColors.white.withValues(alpha: 0.32),
-            width: 0.1,
+            color: CupertinoColors.systemGrey,
+            width: 0.4,
           ),
         ),
         items: const <BottomNavigationBarItem>[

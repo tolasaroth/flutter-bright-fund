@@ -3,6 +3,7 @@ import 'package:gofundme/screens/campaigns/campaign_detail_screen.dart';
 import 'package:gofundme/utils/colors.dart';
 import 'package:gofundme/widgets/app_navigation_bar.dart';
 import 'package:gofundme/widgets/campaign_card.dart';
+import 'package:gofundme/screens/campaigns/create_campaign_screen.dart';
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 
@@ -170,7 +171,14 @@ class _MyCampaignScreenState extends State<MyCampaignScreen> {
                                         const CampaignDetailScreen(),
                                   ),
                                 ),
-                            onEdit: () => _showEditDialog(context, c),
+                            onEdit: () => {
+                              Navigator.of(context, rootNavigator: true).push(
+                                CupertinoPageRoute(
+                                  builder: (_) =>
+                                      const CreateCampaignScreen(isEditing: true),
+                                ),
+                              )
+                            },
                             onDelete: () => _showDeleteDialog(context, index),
                           ),
                         );
@@ -179,7 +187,7 @@ class _MyCampaignScreenState extends State<MyCampaignScreen> {
             ],
           ),
           // Create campaign FAB
-          Positioned(left: 24, right: 24, bottom: 20, child: _buildCreateFAB()),
+          Positioned(right: 16, bottom: 26, child: _buildCreateFAB()),
         ],
       ),
     );
@@ -347,9 +355,15 @@ class _MyCampaignScreenState extends State<MyCampaignScreen> {
   Widget _buildCreateFAB() {
     return CupertinoButton(
       padding: EdgeInsets.zero,
-      onPressed: () {},
+      onPressed: () {
+        Navigator.push(
+          context,
+          CupertinoPageRoute(builder: (_) => const CreateCampaignScreen()),
+        );
+      },
       child: Container(
         height: 54,
+        width: 54,
         decoration: BoxDecoration(
           color: CupertinoColors.activeBlue,
           borderRadius: BorderRadius.circular(16),
@@ -367,17 +381,7 @@ class _MyCampaignScreenState extends State<MyCampaignScreen> {
             Icon(
               CupertinoIcons.add_circled_solid,
               color: AppColors.white,
-              size: 18,
-            ),
-            SizedBox(width: 8),
-            Text(
-              'Start a Campaign',
-              style: TextStyle(
-                color: AppColors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.2,
-              ),
+              size: 22,
             ),
           ],
         ),
@@ -458,7 +462,7 @@ class _MyCampaignScreenState extends State<MyCampaignScreen> {
         ),
         actions: [
           CupertinoDialogAction(
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.muted)),
             onPressed: () => Navigator.of(ctx).pop(),
           ),
           CupertinoDialogAction(

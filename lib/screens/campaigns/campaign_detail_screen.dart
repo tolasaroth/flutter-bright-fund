@@ -693,7 +693,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
               name: d['name'] as String,
               amount: d['amount'] as String,
               time: d['time'] as String,
-              isTop: d['top'] as bool,
+              isTop: d['top'] == true,
               avatarUrl: d['avatar'] as String,
             ),
           ),

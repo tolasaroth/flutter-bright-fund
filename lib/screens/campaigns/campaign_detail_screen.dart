@@ -1,11 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:gofundme/utils/colors.dart';
 import 'package:gofundme/widgets/app_navigation_bar.dart';
+import 'package:gofundme/screens/campaigns/donation_screen.dart';
 
 // ── Data ─────────────────────────────────────────────────────────────────────
 
-const _kImageUrl =
-    'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800';
+const _kImageUrl = 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800';
 
 const _kCampaign = {
   'title': "Help Chan's Education",
@@ -140,19 +140,8 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                 _isBookmarked
                     ? CupertinoIcons.bookmark_fill
                     : CupertinoIcons.bookmark,
-                color: _isBookmarked
-                    ? const Color(0xFFFFD700)
-                    : CupertinoColors.activeBlue,
-                size: 22,
-              ),
-            ),
-            const SizedBox(width: 16),
-            GestureDetector(
-              onTap: () {},
-              child: const Icon(
-                CupertinoIcons.share,
-                color: CupertinoColors.activeBlue,
-                size: 22,
+                color:CupertinoColors.activeBlue,
+                size: 24,
               ),
             ),
           ],
@@ -536,7 +525,14 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
             flex: 2,
             child: CupertinoButton(
               padding: EdgeInsets.zero,
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  CupertinoPageRoute(
+                    builder: (_) => const DonationScreen(),
+                  ),
+                );
+              },
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 13),
                 decoration: BoxDecoration(
@@ -851,7 +847,14 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
   Widget _buildDonateFAB() {
     return CupertinoButton(
       padding: EdgeInsets.zero,
-      onPressed: () {},
+      onPressed: () {
+        Navigator.push(
+          context,
+          CupertinoPageRoute(
+            builder: (_) => const DonationScreen(),
+          ),
+        );
+      },
       child: Container(
         height: 54,
         decoration: BoxDecoration(

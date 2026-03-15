@@ -1,3 +1,5 @@
+// ignore_for_file: unused_field
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gofundme/utils/colors.dart';
@@ -54,10 +56,19 @@ class _DonationScreenState extends State<DonationScreen> {
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       backgroundColor: AppColors.surface,
-      navigationBar: const CupertinoNavigationBar(
-        middle: Text('Donation'),
+      navigationBar: CupertinoNavigationBar(
+        leading: CupertinoButton(
+          padding: EdgeInsets.zero,
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Icon(
+            CupertinoIcons.chevron_left,
+            color: CupertinoColors.activeBlue,
+            size: 28,
+          ),
+        ),
+        middle: const Text('Donation'),
         backgroundColor: AppColors.surface,
-        border: Border(
+        border: const Border(
           bottom: BorderSide(color: CupertinoColors.separator, width: 0.5),
         ),
       ),
@@ -160,7 +171,7 @@ class _DonationScreenState extends State<DonationScreen> {
             const Text(
               "Help Chan's Education",
               style: TextStyle(
-                fontSize: 17,
+                fontSize: 22,
                 fontWeight: FontWeight.w700,
                 color: CupertinoColors.label,
               ),
@@ -177,7 +188,7 @@ class _DonationScreenState extends State<DonationScreen> {
                 const Text(
                   'John Doe',
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 16,
                     color: Color(0xFF007AFF),
                     fontWeight: FontWeight.w500,
                   ),
@@ -200,7 +211,7 @@ class _DonationScreenState extends State<DonationScreen> {
                     Text(
                       '\$${_raisedAmount.toStringAsFixed(0)}',
                       style: const TextStyle(
-                        fontSize: 22,
+                        fontSize: 32,
                         fontWeight: FontWeight.w700,
                         color: Color(0xFF007AFF),
                       ),
@@ -208,7 +219,7 @@ class _DonationScreenState extends State<DonationScreen> {
                     Text(
                       'raised of \$${_goalAmount.toStringAsFixed(0)} goal',
                       style: const TextStyle(
-                        fontSize: 12,
+                        fontSize: 14,
                         color: CupertinoColors.secondaryLabel,
                       ),
                     ),
@@ -795,9 +806,10 @@ class _DonationScreenState extends State<DonationScreen> {
   }
 
   void _showSuccessSnackbar() {
-    final amountLabel = _selectedDonationAmount > 0
-        ? _selectedDonationAmount.toStringAsFixed(0)
-        : '0';
+    final payableAmount = _selectedDonationAmount * 1.03;
+    final amountLabel = payableAmount > 0
+        ? payableAmount.toStringAsFixed(2)
+        : '0.00';
 
     showCupertinoDialog(
       context: context,

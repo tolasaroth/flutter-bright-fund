@@ -389,67 +389,6 @@ class _MyCampaignScreenState extends State<MyCampaignScreen> {
     );
   }
 
-  // ── Edit dialog ────────────────────────────────────────────────────────────
-
-  void _showEditDialog(BuildContext context, Map<String, dynamic> campaign) {
-    final titleController = TextEditingController(
-      text: campaign['title'] as String,
-    );
-    final descController = TextEditingController(
-      text: campaign['description'] as String,
-    );
-
-    showCupertinoDialog(
-      context: context,
-      builder: (ctx) => CupertinoAlertDialog(
-        title: const Text('Edit Campaign'),
-        content: Padding(
-          padding: const EdgeInsets.only(top: 12),
-          child: Column(
-            children: [
-              CupertinoTextField(
-                controller: titleController,
-                placeholder: 'Campaign title',
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
-              ),
-              const SizedBox(height: 10),
-              CupertinoTextField(
-                controller: descController,
-                placeholder: 'Description',
-                maxLines: 3,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          CupertinoDialogAction(
-            isDestructiveAction: false,
-            child: const Text('Cancel'),
-            onPressed: () => Navigator.of(ctx).pop(),
-          ),
-          CupertinoDialogAction(
-            isDefaultAction: true,
-            child: const Text('Save'),
-            onPressed: () {
-              setState(() {
-                campaign['title'] = titleController.text.trim();
-                campaign['description'] = descController.text.trim();
-              });
-              Navigator.of(ctx).pop();
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
   // ── Delete dialog ──────────────────────────────────────────────────────────
 
   void _showDeleteDialog(BuildContext context, int index) {
@@ -462,7 +401,7 @@ class _MyCampaignScreenState extends State<MyCampaignScreen> {
         ),
         actions: [
           CupertinoDialogAction(
-            child: const Text('Cancel', style: TextStyle(color: AppColors.muted)),
+            child: const Text('Cancel', style: TextStyle(color: CupertinoColors.activeBlue)),
             onPressed: () => Navigator.of(ctx).pop(),
           ),
           CupertinoDialogAction(

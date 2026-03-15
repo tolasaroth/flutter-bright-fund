@@ -15,6 +15,17 @@ class MenuBar extends StatelessWidget {
       tabBar: CupertinoTabBar(
         height: 95,
         activeColor: CupertinoColors.activeBlue,
+        inactiveColor: CupertinoColors.systemGrey,
+        // Translucent background enables iOS blur for a glass effect.
+        backgroundColor: CupertinoColors.systemBackground.withValues(
+          alpha: 0.25,
+        ),
+        border: Border(
+          top: BorderSide(
+            color: CupertinoColors.white.withValues(alpha: 0.32),
+            width: 0.1,
+          ),
+        ),
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Column(

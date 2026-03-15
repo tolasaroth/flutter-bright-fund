@@ -130,32 +130,35 @@ class _AppSearchBarState extends State<AppSearchBar>
                   ),
                 ),
                 const SizedBox(height: 10),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(
-                      width: 28,
-                      height: 70,
-                      child: SvgPicture.asset(
-                        'assets/logo/brightfund_logo_horizotal.svg',
-                        fit: BoxFit.fitHeight,
-                        alignment: Alignment.centerLeft,
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 28,
+                        height: 40,
+                        child: SvgPicture.asset(
+                          'assets/logo/brightfund_logo_horizotal.svg',
+                          fit: BoxFit.fitHeight,
+                          alignment: Alignment.centerLeft,
+                        ),
                       ),
-                    ),
 
-                    Text(
-                      widget.title,
-                      // overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w800,
-                        color: _label,
-                        letterSpacing: 0.2,
-                        height: 1.05,
+                      Text(
+                        widget.title,
+                        // overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
+                          color: _label,
+                          letterSpacing: 0.2,
+                          height: 1.05,
+                        ),
                       ),
-                    ),
-                    // ),
-                  ],
+                      // ),
+                    ],
+                  ),
                 ),
               ],
             ),

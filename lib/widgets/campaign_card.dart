@@ -1,15 +1,18 @@
+import 'dart:typed_data';
 import 'package:flutter/cupertino.dart';
+import 'package:gofundme/utils/colors.dart';
 
 class CampaignCard extends StatelessWidget {
   final String title;
   final String description;
   final String imageUrl;
+  final Uint8List? coverImageBytes; // ✅ in-memory image bytes
   final double raisedAmount;
   final double goalAmount;
   final String categoryName;
   final String organizerName;
   final String? organizerImageUrl;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
 
@@ -18,355 +21,236 @@ class CampaignCard extends StatelessWidget {
     required this.title,
     required this.description,
     required this.imageUrl,
+    this.coverImageBytes,
     required this.raisedAmount,
     required this.goalAmount,
     required this.categoryName,
     required this.organizerName,
     this.organizerImageUrl,
-    required this.onTap,
+    this.onTap,
     this.onEdit,
     this.onDelete,
   });
 
-  String _formatAmount(double amount) {
-    if (amount >= 1000) {
-      return '\$${(amount / 1000).toStringAsFixed(1)}k';
-    }
-    return '\$${amount.toStringAsFixed(0)}';
-  }
+  double get _progress => (raisedAmount / goalAmount).clamp(0.0, 1.0);
+
+  String _formatAmount(double amount) =>
+      '\$${amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',')}';
 
   @override
   Widget build(BuildContext context) {
-    final double progress = (goalAmount > 0 ? raisedAmount / goalAmount : 0.0)
-        .clamp(0.0, 1.0);
-    final brightness =
-        CupertinoTheme.of(context).brightness ??
-        MediaQuery.platformBrightnessOf(context);
-    final isDark = brightness == Brightness.dark;
-    final bool hasActions = onEdit != null || onDelete != null;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1C1C1E) : CupertinoColors.white,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x12000000),
-              blurRadius: 16,
-              offset: Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Image with category badge overlay ──
-            Stack(
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [
+          BoxShadow(color: Color(0x0A000000), blurRadius: 12, offset: Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Image section ──────────────────────────────────────────────
+          ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            child: Stack(
               children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(18),
-                  ),
-                  child: Image.network(
-                    imageUrl,
-                    height: 175,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    loadingBuilder: (context, child, progress) {
-                      if (progress == null) return child;
-                      return Container(
-                        height: 175,
-                        color: CupertinoColors.systemGrey5,
-                        child: const Center(
-                          child: CupertinoActivityIndicator(),
-                        ),
-                      );
-                    },
-                    errorBuilder: (context, _, _) => Container(
-                      height: 175,
-                      color: CupertinoColors.systemGrey5,
-                      child: const Center(
-                        child: Icon(
-                          CupertinoIcons.photo,
-                          size: 40,
-                          color: CupertinoColors.systemGrey2,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+                GestureDetector(onTap: onTap, child: _buildImage()),
                 // Category badge
                 Positioned(
-                  top: 12,
-                  left: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: CupertinoColors.activeBlue,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      categoryName,
-                      style: const TextStyle(
-                        color: CupertinoColors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.3,
+                  top: 12, left: 12,
+                  child: IgnorePointer(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: CupertinoColors.activeBlue,
+                        borderRadius: BorderRadius.circular(20),
                       ),
+                      child: Text(categoryName,
+                          style: const TextStyle(color: AppColors.white, fontSize: 11, fontWeight: FontWeight.w700)),
                     ),
                   ),
                 ),
+                // Edit/Delete menu — receives stable parent context
+                if (onEdit != null || onDelete != null)
+                  Positioned(
+                    top: 8, right: 8,
+                    child: _ActionMenu(
+                      parentContext: context,
+                      onEdit: onEdit,
+                      onDelete: onDelete,
+                    ),
+                  ),
               ],
             ),
+          ),
 
-            // ── Card body ──
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
+          // ── Content section ────────────────────────────────────────────
+          GestureDetector(
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Title
-                  Text(
-                    title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: CupertinoTheme.of(context)
-                        .textTheme
-                        .navTitleTextStyle
-                        .copyWith(fontSize: 17, height: 1.3),
-                  ),
-
+                  Text(title,
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800,
+                          color: AppColors.ink, letterSpacing: -0.3),
+                      maxLines: 2, overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 6),
-
-                  // Description
-                  Text(
-                    description,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: CupertinoColors.systemGrey,
-                      fontSize: 13,
-                      height: 1.45,
-                    ),
-                  ),
-
+                  Text(description,
+                      style: const TextStyle(fontSize: 13, color: AppColors.muted, height: 1.5),
+                      maxLines: 2, overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 14),
 
-                  // ── Progress bar ──
-                  LayoutBuilder(
-                    builder: (_, constraints) => ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: SizedBox(
-                        height: 6,
-                        width: constraints.maxWidth,
-                        child: Stack(
-                          children: [
-                            Container(color: CupertinoColors.systemGrey5),
-                            FractionallySizedBox(
-                              widthFactor: progress,
-                              child: Container(
-                                color: CupertinoColors.activeBlue,
-                              ),
-                            ),
-                          ],
+                  // Progress bar
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: SizedBox(
+                      height: 8,
+                      child: LayoutBuilder(builder: (_, constraints) => Stack(children: [
+                        Container(color: const Color(0xFFEEF2F7), width: constraints.maxWidth),
+                        Container(
+                          color: CupertinoColors.activeBlue,
+                          width: constraints.maxWidth * _progress,
                         ),
-                      ),
+                      ])),
                     ),
                   ),
+                  const SizedBox(height: 10),
 
-                  const SizedBox(height: 8),
-
-                  // Raised / goal row
+                  // Raised / goal
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      RichText(
-                        text: TextSpan(
-                          children: [
-                            TextSpan(
-                              text: _formatAmount(raisedAmount),
-                              style: const TextStyle(
-                                color: CupertinoColors.activeBlue,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 14,
-                              ),
-                            ),
-                            const TextSpan(
-                              text: ' raised',
-                              style: TextStyle(
-                                color: CupertinoColors.systemGrey,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Text(
-                        'Goal ${_formatAmount(goalAmount)}',
-                        style: const TextStyle(
-                          color: CupertinoColors.systemGrey,
-                          fontSize: 13,
-                        ),
+                      RichText(text: TextSpan(
+                        children: [
+                          TextSpan(text: _formatAmount(raisedAmount),
+                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800,
+                                  color: CupertinoColors.activeBlue)),
+                          TextSpan(text: ' of ${_formatAmount(goalAmount)}',
+                              style: const TextStyle(fontSize: 12, color: AppColors.muted, fontWeight: FontWeight.w500)),
+                        ],
+                      )),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                            color: AppColors.lightGreen, borderRadius: BorderRadius.circular(10)),
+                        child: Text('${(_progress * 100).toStringAsFixed(0)}%',
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800,
+                                color: AppColors.darkGreen)),
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 14),
-                  Container(height: 0.5, color: CupertinoColors.systemGrey5),
-                  const SizedBox(height: 12),
 
-                  // ── Organizer row ──
-                  Row(
-                    children: [
-                      ClipOval(
-                        child: organizerImageUrl != null
-                            ? Image.network(
-                                organizerImageUrl!,
-                                width: 28,
-                                height: 28,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, _, _) =>
-                                    _placeholderAvatar(),
-                              )
-                            : _placeholderAvatar(),
+                  // Organizer row
+                  Row(children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        organizerImageUrl ?? 'https://i.pravatar.cc/50?img=5',
+                        width: 28, height: 28, fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                            width: 28, height: 28, color: AppColors.lightGreen,
+                            child: const Icon(CupertinoIcons.person_fill, size: 14, color: CupertinoColors.activeBlue)),
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'by $organizerName',
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: CupertinoColors.systemGrey,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                      if (!hasActions)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: CupertinoColors.activeBlue,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Text(
-                            'Donate',
-                            style: TextStyle(
-                              color: CupertinoColors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-
-                  // ── Edit / Delete actions (only when callbacks provided) ──
-                  if (hasActions) ...[
-                    const SizedBox(height: 12),
-                    Container(height: 0.5, color: CupertinoColors.systemGrey5),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        if (onEdit != null)
-                          Expanded(
-                            child: GestureDetector(
-                              onTap: onEdit,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 9,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFEEF6FF),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: const Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      CupertinoIcons.pencil,
-                                      color: CupertinoColors.activeBlue,
-                                      size: 14,
-                                    ),
-                                    SizedBox(width: 5),
-                                    Text(
-                                      'Edit',
-                                      style: TextStyle(
-                                        color: CupertinoColors.activeBlue,
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        if (onEdit != null && onDelete != null)
-                          const SizedBox(width: 10),
-                        if (onDelete != null)
-                          Expanded(
-                            child: GestureDetector(
-                              onTap: onDelete,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 9,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFEF2F2),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: const Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      CupertinoIcons.trash,
-                                      color: CupertinoColors.destructiveRed,
-                                      size: 14,
-                                    ),
-                                    SizedBox(width: 5),
-                                    Text(
-                                      'Delete',
-                                      style: TextStyle(
-                                        color: CupertinoColors.destructiveRed,
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
                     ),
-                  ],
+                    const SizedBox(width: 8),
+                    Text(organizerName,
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.ink)),
+                    const SizedBox(width: 4),
+                    const Icon(CupertinoIcons.checkmark_seal_fill, color: CupertinoColors.activeBlue, size: 13),
+                  ]),
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _placeholderAvatar() {
-    return Container(
-      width: 28,
-      height: 28,
-      color: CupertinoColors.systemGrey4,
-      child: const Icon(
-        CupertinoIcons.person_fill,
-        size: 16,
-        color: CupertinoColors.systemGrey,
+  Widget _buildImage() {
+    if (coverImageBytes != null) {
+      return Image.memory(coverImageBytes!, height: 180, width: double.infinity, fit: BoxFit.cover);
+    }
+    return Image.network(
+      imageUrl, height: 180, width: double.infinity, fit: BoxFit.cover,
+      loadingBuilder: (_, child, progress) => progress == null
+          ? child
+          : Container(height: 180, color: AppColors.lightGreen,
+              child: const Center(child: CupertinoActivityIndicator())),
+      errorBuilder: (_, __, ___) => Container(
+          height: 180, color: AppColors.lightGreen,
+          child: const Center(child: Icon(CupertinoIcons.photo, size: 48, color: CupertinoColors.activeBlue))),
+    );
+  }
+}
+
+// ── Inline action menu (Edit / Delete) ────────────────────────────────────────
+
+class _ActionMenu extends StatelessWidget {
+  /// Must be the BuildContext of a stable ancestor widget (e.g. the list item),
+  /// NOT the modal sheet's builder context — using the sheet context after pop() crashes.
+  final BuildContext parentContext;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
+
+  const _ActionMenu({
+    required this.parentContext,
+    this.onEdit,
+    this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      // Use parentContext here so the modal is anchored to the stable widget tree
+      onTap: () => _showSheet(parentContext),
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        width: 34, height: 34,
+        decoration: BoxDecoration(
+          color: const Color(0xCC000000),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: const Icon(CupertinoIcons.ellipsis, color: AppColors.white, size: 16),
+      ),
+    );
+  }
+
+  void _showSheet(BuildContext ctx) {
+    showCupertinoModalPopup<void>(
+      context: ctx,
+      builder: (sheetCtx) => CupertinoActionSheet(
+        actions: [
+          if (onEdit != null)
+            CupertinoActionSheetAction(
+              onPressed: () {
+                // Pop the sheet first using the sheet's own context, then
+                // invoke the callback which navigates on the parent context.
+                Navigator.of(sheetCtx).pop();
+                onEdit!();
+              },
+              child: const Text('Edit Campaign',
+                  style: TextStyle(color: CupertinoColors.activeBlue)),
+            ),
+          if (onDelete != null)
+            CupertinoActionSheetAction(
+              isDestructiveAction: true,
+              onPressed: () {
+                Navigator.of(sheetCtx).pop();
+                onDelete!();
+              },
+              child: const Text('Delete Campaign'),
+            ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.of(sheetCtx).pop(),
+          child: const Text('Cancel'),
+        ),
       ),
     );
   }

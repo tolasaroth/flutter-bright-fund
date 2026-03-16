@@ -1,88 +1,10 @@
 import 'package:flutter/cupertino.dart';
-import 'package:gofundme/screens/campaigns/campaign_detail_screen.dart';
+import 'package:gofundme/state/app_state.dart';
 import 'package:gofundme/utils/colors.dart';
 import 'package:gofundme/widgets/app_navigation_bar.dart';
 import 'package:gofundme/widgets/campaign_card.dart';
+import 'package:gofundme/screens/campaigns/campaign_detail_screen.dart';
 import 'package:gofundme/screens/campaigns/create_campaign_screen.dart';
-
-// Keys are normalised to match CampaignDetailScreen's expectations:
-//   categoryName, raisedAmount, goalAmount  (not category / raised / goal)
-const _kMyCampaigns = [
-  {
-    'title': "Help Chan's Education",
-    'description':
-        "Support Chan's education and help him achieve his dreams and a brighter future.",
-    'categoryName': 'Education',
-    'imageUrl':
-        'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800',
-    'raisedAmount': 2000.0,
-    'goalAmount': 4000.0,
-    'donors': '128',
-    'daysLeft': '18',
-    'weeklyDonors': '34',
-    'status': 'active',
-    'organizerName': 'John Doe',
-    'organizerImageUrl': 'https://i.pravatar.cc/50?img=5',
-    'organizerRole': 'Campaign Organiser',
-    'createdAt': 'Feb 14, 2026',
-  },
-  {
-    'title': 'Community Garden Project',
-    'description':
-        'Turn an empty lot into a thriving community garden that feeds local families.',
-    'categoryName': 'Community',
-    'imageUrl':
-        'https://images.unsplash.com/photo-1466692476868-aef1dfb1e735?w=800',
-    'raisedAmount': 3100.0,
-    'goalAmount': 6000.0,
-    'donors': '74',
-    'daysLeft': '25',
-    'weeklyDonors': '12',
-    'status': 'active',
-    'organizerName': 'Maria Santos',
-    'organizerImageUrl': 'https://i.pravatar.cc/50?img=6',
-    'organizerRole': 'Campaign Organiser',
-    'createdAt': 'Mar 1, 2026',
-  },
-  {
-    'title': 'Save the Rainforest',
-    'description':
-        'Help us protect the Amazon rainforest and its wildlife for future generations.',
-    'categoryName': 'Environment',
-    'imageUrl':
-        'https://images.unsplash.com/photo-1518621736915-f3b1c41bfd00?w=800',
-    'raisedAmount': 25000.0,
-    'goalAmount': 25000.0,
-    'donors': '410',
-    'daysLeft': '0',
-    'weeklyDonors': '0',
-    'status': 'completed',
-    'organizerName': 'John Doe',
-    'organizerImageUrl': 'https://i.pravatar.cc/50?img=5',
-    'organizerRole': 'Campaign Organiser',
-    'createdAt': 'Jan 3, 2026',
-  },
-  {
-    'title': 'New School Library',
-    'description':
-        'Help build a new library for the local school and inspire a love of reading.',
-    'categoryName': 'Education',
-    'imageUrl':
-        'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=800',
-    'raisedAmount': 0.0,
-    'goalAmount': 10000.0,
-    'donors': '0',
-    'daysLeft': '30',
-    'weeklyDonors': '0',
-    'status': 'paused',
-    'organizerName': 'Alice Kim',
-    'organizerImageUrl': 'https://i.pravatar.cc/50?img=7',
-    'organizerRole': 'Campaign Organiser',
-    'createdAt': 'Mar 12, 2026',
-  },
-];
-
-// ── Screen ────────────────────────────────────────────────────────────────────
 
 class MyCampaignScreen extends StatefulWidget {
   const MyCampaignScreen({super.key});
@@ -92,44 +14,42 @@ class MyCampaignScreen extends StatefulWidget {
 }
 
 class _MyCampaignScreenState extends State<MyCampaignScreen> {
-  int _selectedFilter = 0; // 0=All 1=Active 2=Paused 3=Completed
+  int _selectedFilter = 0;
 
-  late final List<Map<String, dynamic>> _campaigns;
+  static const _filters = ['All', 'Active', 'Paused', 'Completed'];
+  static const _shadow = BoxShadow(color: Color(0x0A000000), blurRadius: 12, offset: Offset(0, 4));
 
   @override
   void initState() {
     super.initState();
-    _campaigns =
-        _kMyCampaigns.map((c) => Map<String, dynamic>.from(c)).toList();
+    AppState.instance.addListener(_onStateChanged);
   }
 
-  static const _filters = ['All', 'Active', 'Paused', 'Completed'];
-  static const _shadow = BoxShadow(
-    color: Color(0x0A000000),
-    blurRadius: 12,
-    offset: Offset(0, 4),
-  );
+  @override
+  void dispose() {
+    AppState.instance.removeListener(_onStateChanged);
+    super.dispose();
+  }
 
-  List<Map<String, dynamic>> get _filtered {
-    if (_selectedFilter == 0) return _campaigns;
+  void _onStateChanged() {
+    if (mounted) setState(() {});
+  }
+
+  List<Campaign> get _filtered {
+    final all = AppState.instance.myCampaigns;
+    if (_selectedFilter == 0) return all;
     final label = _filters[_selectedFilter].toLowerCase();
-    return _campaigns.where((c) => (c['status'] as String) == label).toList();
+    return all.where((c) => c.status == label).toList();
   }
-
-  // ── Summary stats ──────────────────────────────────────────────────────────
 
   double get _totalRaised =>
-      _campaigns.fold(0.0, (s, c) => s + (c['raisedAmount'] as double));
+      AppState.instance.myCampaigns.fold(0.0, (s, c) => s + c.raisedAmount);
 
-  int get _totalDonors => _campaigns.fold(
-        0,
-        (s, c) => s + (int.tryParse(c['donors'] as String? ?? '0') ?? 0),
-      );
+  int get _totalDonors =>
+      AppState.instance.myCampaigns.fold(0, (s, c) => s + c.donorCount);
 
   int get _activeCampaigns =>
-      _campaigns.where((c) => c['status'] == 'active').length;
-
-  // ── Build ──────────────────────────────────────────────────────────────────
+      AppState.instance.myCampaigns.where((c) => c.status == 'active').length;
 
   @override
   Widget build(BuildContext context) {
@@ -168,39 +88,29 @@ class _MyCampaignScreenState extends State<MyCampaignScreen> {
                           return Padding(
                             padding: EdgeInsets.only(bottom: last ? 88 : 0),
                             child: CampaignCard(
-                              title: c['title'] as String,
-                              description: c['description'] as String,
-                              imageUrl: c['imageUrl'] as String,
-                              raisedAmount: c['raisedAmount'] as double,
-                              goalAmount: c['goalAmount'] as double,
-                              categoryName: c['categoryName'] as String,
-                              organizerName: c['organizerName'] as String,
-                              organizerImageUrl:
-                                  c['organizerImageUrl'] as String?,
-                              // ✅ Pass full campaign map to detail screen
-                              onTap: () => Navigator.of(
-                                context,
-                                rootNavigator: true,
-                              ).push(
+                              title: c.title,
+                              description: c.description,
+                              imageUrl: c.coverImageUrl ?? 'https://images.unsplash.com/photo-1518621736915-f3b1c41bfd00?w=800',
+                              coverImageBytes: c.coverImageBytes,
+                              raisedAmount: c.raisedAmount,
+                              goalAmount: c.goalAmount,
+                              categoryName: c.categoryName,
+                              organizerName: c.organizerName,
+                              organizerImageUrl: 'https://i.pravatar.cc/50?img=5',
+                              onTap: () => Navigator.of(context, rootNavigator: true).push(
                                 CupertinoPageRoute(
-                                  builder: (_) =>
-                                      CampaignDetailScreen(campaign: c),
+                                  builder: (_) => CampaignDetailScreen(campaignId: c.id),
                                 ),
                               ),
-                              // ✅ Pass full campaign map to edit screen
-                              onEdit: () => Navigator.of(
-                                context,
-                                rootNavigator: true,
-                              ).push(
+                              onEdit: () => Navigator.of(context, rootNavigator: true).push(
                                 CupertinoPageRoute(
                                   builder: (_) => CreateCampaignScreen(
                                     isEditing: true,
-                                    campaign: c,
+                                    campaignId: c.id,
                                   ),
                                 ),
                               ),
-                              onDelete: () =>
-                                  _showDeleteDialog(context, index),
+                              onDelete: () => _showDeleteDialog(context, c.id),
                             ),
                           );
                         },
@@ -215,46 +125,28 @@ class _MyCampaignScreenState extends State<MyCampaignScreen> {
     );
   }
 
-  // ── Summary card ───────────────────────────────────────────────────────────
-
   Widget _buildSummaryCard() {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 50, 16, 16),
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 8),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          begin: Alignment.topLeft, end: Alignment.bottomRight,
           colors: [CupertinoColors.activeBlue, CupertinoColors.systemBlue],
         ),
         borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x4400C96B),
-            blurRadius: 20,
-            offset: Offset(0, 8),
-          ),
-        ],
+        boxShadow: const [BoxShadow(color: Color(0x4400C96B), blurRadius: 20, offset: Offset(0, 8))],
       ),
       child: Row(
         children: [
           _summaryStatItem(
             '\$${_totalRaised >= 1000 ? '${(_totalRaised / 1000).toStringAsFixed(1)}k' : _totalRaised.toStringAsFixed(0)}',
-            'Total Raised',
-            CupertinoIcons.money_dollar_circle_fill,
+            'Total Raised', CupertinoIcons.money_dollar_circle_fill,
           ),
           _verticalDivider(),
-          _summaryStatItem(
-            '$_activeCampaigns',
-            'Active',
-            CupertinoIcons.chart_bar_fill,
-          ),
+          _summaryStatItem('$_activeCampaigns', 'Active', CupertinoIcons.chart_bar_fill),
           _verticalDivider(),
-          _summaryStatItem(
-            '$_totalDonors',
-            'Donors',
-            CupertinoIcons.heart_fill,
-          ),
+          _summaryStatItem('$_totalDonors', 'Donors', CupertinoIcons.heart_fill),
         ],
       ),
     );
@@ -266,33 +158,15 @@ class _MyCampaignScreenState extends State<MyCampaignScreen> {
         children: [
           Icon(icon, color: const Color(0xCCFFFFFF), size: 18),
           const SizedBox(height: 6),
-          Text(
-            value,
-            style: const TextStyle(
-              color: AppColors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-              letterSpacing: -0.5,
-            ),
-          ),
+          Text(value, style: const TextStyle(color: AppColors.white, fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
           const SizedBox(height: 2),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Color(0xCCFFFFFF),
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+          Text(label, style: const TextStyle(color: Color(0xCCFFFFFF), fontSize: 11, fontWeight: FontWeight.w500)),
         ],
       ),
     );
   }
 
-  Widget _verticalDivider() =>
-      Container(width: 1, height: 48, color: const Color(0x40FFFFFF));
-
-  // ── Filter tabs ────────────────────────────────────────────────────────────
+  Widget _verticalDivider() => Container(width: 1, height: 48, color: const Color(0x40FFFFFF));
 
   Widget _buildFilterTabs() {
     return SizedBox(
@@ -308,25 +182,18 @@ class _MyCampaignScreenState extends State<MyCampaignScreen> {
             onTap: () => setState(() => _selectedFilter = i),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
               decoration: BoxDecoration(
                 color: active ? CupertinoColors.activeBlue : AppColors.white,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: active ? const [_shadow] : null,
-                border: active
-                    ? null
-                    : Border.all(
-                        color: const Color(0xFFDDE1E7), width: 1),
+                border: active ? null : Border.all(color: const Color(0xFFDDE1E7), width: 1),
               ),
-              child: Text(
-                _filters[i],
-                style: TextStyle(
-                  color: active ? AppColors.white : AppColors.muted,
-                  fontSize: 13,
-                  fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-                ),
-              ),
+              child: Text(_filters[i], style: TextStyle(
+                color: active ? AppColors.white : AppColors.muted,
+                fontSize: 13,
+                fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+              )),
             ),
           );
         },
@@ -334,46 +201,24 @@ class _MyCampaignScreenState extends State<MyCampaignScreen> {
     );
   }
 
-  // ── Empty state ────────────────────────────────────────────────────────────
-
   Widget _buildEmptyState() {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: AppColors.lightGreen,
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: const Icon(
-              CupertinoIcons.chart_bar_alt_fill,
-              size: 38,
-              color: AppColors.green,
-            ),
+            width: 80, height: 80,
+            decoration: BoxDecoration(color: AppColors.lightGreen, borderRadius: BorderRadius.circular(24)),
+            child: const Icon(CupertinoIcons.chart_bar_alt_fill, size: 38, color: AppColors.green),
           ),
           const SizedBox(height: 16),
-          const Text(
-            'No campaigns here',
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-              color: AppColors.ink,
-            ),
-          ),
+          const Text('No campaigns here', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.ink)),
           const SizedBox(height: 6),
-          const Text(
-            'Start a campaign and make a difference.',
-            style: TextStyle(fontSize: 14, color: AppColors.muted),
-          ),
+          const Text('Start a campaign and make a difference.', style: TextStyle(fontSize: 14, color: AppColors.muted)),
         ],
       ),
     );
   }
-
-  // ── Create FAB ─────────────────────────────────────────────────────────────
 
   Widget _buildCreateFAB() {
     return CupertinoButton(
@@ -383,54 +228,33 @@ class _MyCampaignScreenState extends State<MyCampaignScreen> {
         CupertinoPageRoute(builder: (_) => const CreateCampaignScreen()),
       ),
       child: Container(
-        height: 54,
-        width: 54,
+        height: 54, width: 54,
         decoration: BoxDecoration(
           color: CupertinoColors.activeBlue,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x5500C96B),
-              blurRadius: 18,
-              offset: Offset(0, 6),
-            ),
-          ],
+          boxShadow: const [BoxShadow(color: Color(0x5500C96B), blurRadius: 18, offset: Offset(0, 6))],
         ),
-        child: const Icon(
-          CupertinoIcons.add_circled_solid,
-          color: AppColors.white,
-          size: 22,
-        ),
+        child: const Icon(CupertinoIcons.add_circled_solid, color: AppColors.white, size: 22),
       ),
     );
   }
 
-  // ── Delete dialog ──────────────────────────────────────────────────────────
-
-  void _showDeleteDialog(BuildContext context, int index) {
+  void _showDeleteDialog(BuildContext context, String campaignId) {
     showCupertinoDialog(
       context: context,
       builder: (ctx) => CupertinoAlertDialog(
         title: const Text('Delete Campaign'),
-        content: const Text(
-          'Are you sure you want to delete this campaign? This action cannot be undone.',
-        ),
+        content: const Text('Are you sure you want to delete this campaign? This action cannot be undone.'),
         actions: [
           CupertinoDialogAction(
-            child: const Text(
-              'Cancel',
-              style: TextStyle(color: CupertinoColors.activeBlue),
-            ),
+            child: const Text('Cancel', style: TextStyle(color: CupertinoColors.activeBlue)),
             onPressed: () => Navigator.of(ctx).pop(),
           ),
           CupertinoDialogAction(
             isDestructiveAction: true,
             child: const Text('Delete'),
             onPressed: () {
-              setState(() {
-                final item = _filtered[index];
-                _campaigns.remove(item);
-              });
+              AppState.instance.deleteCampaign(campaignId);
               Navigator.of(ctx).pop();
             },
           ),

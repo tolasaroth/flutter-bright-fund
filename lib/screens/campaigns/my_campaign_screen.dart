@@ -5,7 +5,6 @@ import 'package:gofundme/widgets/app_navigation_bar.dart';
 import 'package:gofundme/widgets/campaign_card.dart';
 import 'package:gofundme/screens/campaigns/create_campaign_screen.dart';
 
-// ── Data ──────────────────────────────────────────────────────────────────────
 
 const _kMyCampaigns = [
   {

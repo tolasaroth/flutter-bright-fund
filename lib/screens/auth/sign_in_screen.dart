@@ -67,24 +67,27 @@ class _SignInScreenState extends State<SignInScreen>
     }
 
     setState(() => _isLoading = true);
+
     try {
-      final response = await AuthService().signIn(email, password);
+      final response = await authService.signIn(email, password);
 
-      final accessToken = response['access_token']?.toString();
-      final refreshToken = response['refresh_token']?.toString();
-      final message = response['message']?.toString();
+      final user = response['user'];
+      final token = response['token'];
 
-      print('Login successful: $message');
-      print('Access Token: $accessToken');
-      print('Refresh Token: $refreshToken');
+      print('Login successful');
+      print('User: ${user['first_name']} ${user['last_name']}');
+      print('Token: $token');
 
       if (!mounted) return;
+
       Navigator.pushReplacementNamed(context, '/home');
     } catch (e) {
       print('Login failed: $e');
       _showErrorDialog(e.toString().replaceAll('Exception: ', ''));
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -96,7 +99,7 @@ class _SignInScreenState extends State<SignInScreen>
         content: Text(message),
         actions: [
           CupertinoDialogAction(
-            child: const Text('OK'),
+            child: const Text('OK', style: TextStyle(color: CupertinoColors.activeBlue)),
             onPressed: () => Navigator.pop(context),
           ),
         ],
@@ -129,10 +132,14 @@ class _SignInScreenState extends State<SignInScreen>
 
   ObstructingPreferredSizeWidget _buildTopBar() {
     return CupertinoNavigationBar(
-      backgroundColor: CupertinoColors.systemBackground.resolveFrom(context).withValues(alpha: 0.85),
+      backgroundColor: CupertinoColors.systemBackground
+          .resolveFrom(context)
+          .withValues(alpha: 0.85),
       border: Border(
         bottom: BorderSide(
-          color: CupertinoColors.separator.resolveFrom(context).withValues(alpha: 0.3),
+          color: CupertinoColors.separator
+              .resolveFrom(context)
+              .withValues(alpha: 0.3),
           width: 0.5,
         ),
       ),
@@ -180,7 +187,8 @@ class _SignInScreenState extends State<SignInScreen>
                     '/logo/brightfund_logo.svg',
                     fit: BoxFit.contain,
                     alignment: Alignment.center,
-                    placeholderBuilder: (context) => const Center(child: CupertinoActivityIndicator()),
+                    placeholderBuilder: (context) =>
+                        const Center(child: CupertinoActivityIndicator()),
                   ),
                 ),
               ],
@@ -483,6 +491,7 @@ class _StyledTextFieldState extends State<_StyledTextField> {
         placeholder: widget.placeholder,
         keyboardType: widget.keyboardType,
         obscureText: widget.obscureText,
+        cursorColor: CupertinoColors.darkBackgroundGray,
         autocorrect: widget.autocorrect,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: const BoxDecoration(),

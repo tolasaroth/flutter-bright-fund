@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:gofundme/utils/colors.dart';
 import 'package:gofundme/widgets/app_navigation_bar.dart';
+import 'package:gofundme/services/auth_service.dart';
 
 class SettingScreen extends StatefulWidget {
   const SettingScreen({super.key});
@@ -11,6 +12,13 @@ class SettingScreen extends StatefulWidget {
 
 class _SettingScreenState extends State<SettingScreen> {
   bool _pushNotifications = true;
+
+  Future<void> _handleSignOut() async {
+    final navigator = Navigator.of(context);
+    navigator.pop();
+    await authService.logout();
+    navigator.pushNamedAndRemoveUntil('/sign-in', (route) => false);
+  }
 
   void _showComingSoon(String title) {
     showCupertinoDialog<void>(
@@ -38,25 +46,23 @@ class _SettingScreenState extends State<SettingScreen> {
         actions: [
           CupertinoActionSheetAction(
             isDestructiveAction: true,
-            onPressed: () {
-              Navigator.of(context).pop();
-              _showComingSoon('Signed out');
-            },
+            onPressed: _handleSignOut,
             child: const Text('Sign Out'),
           ),
         ],
         cancelButton: CupertinoActionSheetAction(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: const Text(
+            'Cancel',
+            style: TextStyle(color: CupertinoColors.activeBlue),
+          ),
         ),
       ),
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
-
     return CupertinoPageScaffold(
       navigationBar: const AppNavigationBar(
         title: 'Settings',
@@ -67,7 +73,6 @@ class _SettingScreenState extends State<SettingScreen> {
         bottom: false,
         child: CustomScrollView(
           slivers: [
-
             _buildSection(
               header: 'NOTIFICATIONS',
               children: [
@@ -124,7 +129,7 @@ class _SettingScreenState extends State<SettingScreen> {
   }) {
     return SliverToBoxAdapter(
       child: CupertinoListSection.insetGrouped(
-      backgroundColor: AppColors.surface,
+        backgroundColor: AppColors.surface,
         header: Padding(
           padding: const EdgeInsets.only(bottom: 6, left: 12, right: 12),
           child: Text(
@@ -169,7 +174,6 @@ class _NavTile extends StatelessWidget {
     );
   }
 }
-
 
 class _ToggleTile extends StatelessWidget {
   const _ToggleTile({

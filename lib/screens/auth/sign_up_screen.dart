@@ -106,17 +106,13 @@ class _SignUpScreenState extends State<SignUpScreen>
     }
     setState(() => _isLoading = true);
     try {
-      await AuthService().register(
+      await authService.register(
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim(),
         email: _emailController.text.trim(),
         phoneNumber: _phoneController.text.trim(),
+        role: _selectedRole!.trim().toLowerCase(),
         password: _passwordController.text,
-        confirmPassword: _confirmPasswordController.text,
-        profileImage: _profileImageController.text.trim().isEmpty
-            ? null
-            : _profileImageController.text.trim(),
-        rolesRequest: [_selectedRole!],
       );
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/sign-in');
@@ -135,7 +131,10 @@ class _SignUpScreenState extends State<SignUpScreen>
         content: Text(message),
         actions: [
           CupertinoDialogAction(
-            child: const Text('OK'),
+            child: const Text(
+              'OK',
+              style: TextStyle(color: CupertinoColors.activeBlue),
+            ),
             onPressed: () => Navigator.pop(context),
           ),
         ],
@@ -596,6 +595,7 @@ class _StyledTextFieldState extends State<_StyledTextField> {
         controller: widget.controller,
         placeholder: widget.placeholder,
         keyboardType: widget.keyboardType,
+        cursorColor: _C.ink,
         obscureText: widget.obscureText,
         autocorrect: widget.autocorrect,
         textCapitalization: widget.textCapitalization,

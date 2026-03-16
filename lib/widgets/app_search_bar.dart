@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gofundme/utils/colors.dart';
+import 'package:gofundme/screens/setting/profile_screen.dart';
 
 class AppSearchBar extends StatefulWidget implements PreferredSizeWidget {
   final String title;
@@ -172,7 +173,11 @@ class _AppSearchBarState extends State<AppSearchBar>
 
   Widget _buildAvatar() {
     return GestureDetector(
-      onTap: () {},
+      onTap: () {
+        Navigator.of(
+          context,
+        ).push(CupertinoPageRoute(builder: (_) => const ProfileScreen()));
+      },
       child: Container(
         width: 42,
         height: 42,

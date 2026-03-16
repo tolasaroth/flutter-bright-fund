@@ -1,10 +1,14 @@
+import 'dart:typed_data';
+import 'dart:io';
+import 'package:gofundme/services/campaign_service.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:gofundme/services/category_service.dart';
 import 'package:gofundme/utils/colors.dart';
+import 'package:file_picker/file_picker.dart';
 
-// ─────────────────────────────────────────────
-//  Colours  (extend your existing _C as needed)
-// ─────────────────────────────────────────────
 class _C {
   static const ink = Color(0xFF1A1A1A);
   static const muted = Color(0xFF8E8E93);
@@ -96,6 +100,9 @@ class CreateCampaignScreen extends StatefulWidget {
 }
 
 class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
+
+  final CampaignService _campaignService = CampaignService();
+
   final _titleCtrl = TextEditingController();
   final _taglineCtrl = TextEditingController();
   final _locationCtrl = TextEditingController();
@@ -108,13 +115,23 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
   final _accountNameCtrl = TextEditingController();
   final _accountNumberCtrl = TextEditingController();
 
+  List<_Category> _availableCategories = _categories;
+
   String? _selectedCategoryId;
   String _selectedStatus = 'active';
   DateTime _endDate = DateTime.now().add(const Duration(days: 30));
   bool _hasDeadline = true;
-  bool _hasCoverImage = false;
-  bool _hasQrImage = false;
-  bool _hasPdfDocument = false;
+  Uint8List? _coverImageBytes;
+  Uint8List? _qrImageBytes;
+  String? _pdfFileName;
+  String _selectedBank = 'ABA';
+
+  static const _bankOptions = ['ABA', 'ACLEDA', 'Wing Bank'];
+  static const _bankLogoAssets = {
+    'ABA': 'assets/logo/aba.svg',
+    'ACLEDA': 'assets/logo/aceleda.svg',
+    'Wing Bank': 'assets/logo/wing.svg',
+  };
 
   // Validation
   String? _titleError;
@@ -123,6 +140,61 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
   String? _currentAmountError;
   String? _goalError;
   String? _categoryError;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCategories();
+  }
+
+  _Category? _matchPresetCategory(String name) {
+    final normalizedName = name.trim().toLowerCase();
+    for (final category in _categories) {
+      if (category.label.toLowerCase() == normalizedName ||
+          normalizedName.contains(category.label.toLowerCase()) ||
+          category.id.toLowerCase() == normalizedName) {
+        return category;
+      }
+    }
+    return null;
+  }
+
+  Future<File> _bytesToFile(Uint8List bytes, String name) async {
+    final dir = await getTemporaryDirectory();
+    final file = File('${dir.path}/$name');
+    return await file.writeAsBytes(bytes);
+  }
+
+  Future<void> _fetchCategories() async {
+    try {
+      final categories = await categoryService.fetchCategories();
+      if (!mounted || categories.isEmpty) return;
+
+      final mapped = categories.asMap().entries.map((entry) {
+        final apiCategory = entry.value;
+        final name = apiCategory.name.trim();
+        final matched = _matchPresetCategory(name);
+        final fallback = _categories[entry.key % _categories.length];
+
+        return _Category(
+          id: apiCategory.id,
+          label: name,
+          icon: matched?.icon ?? fallback.icon,
+          color: matched?.color ?? fallback.color,
+        );
+      }).toList();
+
+      setState(() {
+        _availableCategories = mapped;
+        if (_selectedCategoryId != null &&
+            !_availableCategories.any((c) => c.id == _selectedCategoryId)) {
+          _selectedCategoryId = null;
+        }
+      });
+    } catch (_) {
+      // Keep preset categories if the API call fails.
+    }
+  }
 
   @override
   void dispose() {
@@ -198,25 +270,76 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
         _goalError == null;
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (!_validate()) return;
-    showCupertinoDialog<void>(
-      context: context,
-      builder: (_) => CupertinoAlertDialog(
-        title: const Text('Campaign Created! 🎉'),
-        content: Text('"${_titleCtrl.text.trim()}" was submitted for review.'),
-        actions: [
-          CupertinoDialogAction(
-            isDefaultAction: true,
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context);
-            },
-            child: const Text('Done'),
-          ),
-        ],
-      ),
-    );
+
+    try {
+      final goal = double.parse(_goalCtrl.text.replaceAll(',', ''));
+
+      final result = await _campaignService.createCampaign(
+        title: _titleCtrl.text.trim(),
+        description: _storyCtrl.text.trim(),
+        goalAmount: goal,
+        categoryId: _selectedCategoryId,
+        startDate: DateTime.now().toIso8601String(),
+        endDate: _hasDeadline ? _endDate.toIso8601String() : null,
+      );
+
+      final campaignId = result['id'];
+
+      /// Upload Cover Image
+      if (_coverImageBytes != null) {
+        final file = await _bytesToFile(_coverImageBytes!, 'cover.jpg');
+        await _campaignService.uploadImages(campaignId, [file]);
+      }
+
+      /// Upload PDF Document
+      if (_pdfFileName != null) {
+        final result = await FilePicker.platform.pickFiles(
+          type: FileType.custom,
+          allowedExtensions: ['pdf'],
+        );
+
+        if (result != null && result.files.single.path != null) {
+          final file = File(result.files.single.path!);
+          await _campaignService.uploadDocuments(campaignId, [file]);
+        }
+      }
+
+      if (!mounted) return;
+
+      showCupertinoDialog<void>(
+        context: context,
+        builder: (_) => CupertinoAlertDialog(
+          title: const Text('Campaign Created! 🎉'),
+          content: Text('"${_titleCtrl.text.trim()}" was submitted successfully.'),
+          actions: [
+            CupertinoDialogAction(
+              isDefaultAction: true,
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.pop(context);
+              },
+              child: const Text('Done'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      showCupertinoDialog<void>(
+        context: context,
+        builder: (_) => CupertinoAlertDialog(
+          title: const Text('Error'),
+          content: Text(e.toString()),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   void _showDatePicker() {
@@ -258,52 +381,92 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
     );
   }
 
-  void _showImageSheet(String title, VoidCallback onConfirm) {
+  Future<void> _pickCoverImage() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      allowMultiple: false,
+      withData: true,
+    );
+    if (result != null && result.files.isNotEmpty) {
+      final bytes = result.files.first.bytes;
+      if (bytes != null) setState(() => _coverImageBytes = bytes);
+    }
+  }
+
+  Future<void> _pickQrImage() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      allowMultiple: false,
+      withData: true,
+    );
+    if (result != null && result.files.isNotEmpty) {
+      final bytes = result.files.first.bytes;
+      if (bytes != null) setState(() => _qrImageBytes = bytes);
+    }
+  }
+
+  Future<void> _pickPdfDocument() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+      allowMultiple: false,
+    );
+    if (result != null && result.files.isNotEmpty) {
+      setState(() => _pdfFileName = result.files.first.name);
+    }
+  }
+
+  void _showImageSheet(String title, Future<void> Function() onPick) {
     showCupertinoModalPopup<void>(
       context: context,
-      builder: (_) => CupertinoActionSheet(
+      builder: (sheetContext) => CupertinoActionSheet(
         title: Text(title),
         actions: [
           CupertinoActionSheetAction(
-            onPressed: () {
-              Navigator.pop(context);
-              onConfirm();
+            onPressed: () async {
+              Navigator.pop(sheetContext);
+              await onPick();
             },
-            child: const Text('Take Photo'),
-          ),
-          CupertinoActionSheetAction(
-            onPressed: () {
-              Navigator.pop(context);
-              onConfirm();
-            },
-            child: const Text('Choose from Library'),
+            child: const Text(
+              'Choose from Library',
+              style: TextStyle(color: CupertinoColors.activeBlue),
+            ),
           ),
         ],
         cancelButton: CupertinoActionSheetAction(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          onPressed: () => Navigator.pop(sheetContext),
+          child: const Text(
+            'Cancel',
+            style: TextStyle(color: CupertinoColors.destructiveRed),
+          ),
         ),
       ),
     );
   }
 
-  void _showDocumentSheet(String title, VoidCallback onConfirm) {
+  void _showDocumentSheet(String title, Future<void> Function() onPick) {
     showCupertinoModalPopup<void>(
       context: context,
-      builder: (_) => CupertinoActionSheet(
+      builder: (sheetContext) => CupertinoActionSheet(
         title: Text(title),
         actions: [
           CupertinoActionSheetAction(
-            onPressed: () {
-              Navigator.pop(context);
-              onConfirm();
+            onPressed: () async {
+              Navigator.pop(sheetContext);
+              await onPick();
             },
-            child: const Text('Choose PDF from Files'),
+            child: const Text(
+              'Choose PDF from Files',
+              style: TextStyle(color: CupertinoColors.activeBlue),
+            ),
           ),
         ],
         cancelButton: CupertinoActionSheetAction(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          onPressed: () => Navigator.pop(sheetContext),
+          child: const Text(
+            'Cancel',
+            style: TextStyle(color: CupertinoColors.destructiveRed),
+          ),
         ),
       ),
     );
@@ -353,17 +516,16 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
                     _FieldGroup(
                       label: 'Cover Photo',
                       child: _ImagePickerField(
-                        hasImage: _hasCoverImage,
+                        hasImage: _coverImageBytes != null,
+                        imageBytes: _coverImageBytes,
                         icon: CupertinoIcons.photo_fill_on_rectangle_fill,
                         accentColor: _C.accent,
                         emptyLabel: 'Add Cover Photo',
                         emptyHint: 'Campaigns with photos raise 3× more',
                         doneLabel: 'Cover photo added',
-                        onTap: () => _showImageSheet(
-                          'Cover Photo',
-                          () => setState(() => _hasCoverImage = true),
-                        ),
-                        onRemove: () => setState(() => _hasCoverImage = false),
+                        onTap: () =>
+                            _showImageSheet('Cover Photo', _pickCoverImage),
+                        onRemove: () => setState(() => _coverImageBytes = null),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -465,7 +627,7 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
                             crossAxisSpacing: 10,
                             mainAxisSpacing: 10,
                             childAspectRatio: 1,
-                            children: _categories
+                            children: _availableCategories
                                 .map(
                                   (cat) => _CategoryChip(
                                     category: cat,
@@ -487,17 +649,17 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
                     _FieldGroup(
                       label: 'Supporting Document (PDF)',
                       child: _ImagePickerField(
-                        hasImage: _hasPdfDocument,
+                        hasImage: _pdfFileName != null,
                         icon: CupertinoIcons.doc_text_fill,
                         accentColor: _C.teal,
                         emptyLabel: 'Upload PDF Document',
                         emptyHint: 'Proposal, budget, or verification document',
-                        doneLabel: 'PDF document uploaded',
+                        doneLabel: _pdfFileName ?? 'PDF document uploaded',
                         onTap: () => _showDocumentSheet(
                           'Upload PDF Document',
-                          () => setState(() => _hasPdfDocument = true),
+                          _pickPdfDocument,
                         ),
-                        onRemove: () => setState(() => _hasPdfDocument = false),
+                        onRemove: () => setState(() => _pdfFileName = null),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -604,11 +766,24 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
                     ),
                     const SizedBox(height: 14),
 
+                    // ── Bank Selection ──────────────────────────────────
+                    _FieldGroup(
+                      label: 'Receiving Bank',
+                      child: _BankSelector(
+                        options: _bankOptions,
+                        logoAssets: _bankLogoAssets,
+                        selected: _selectedBank,
+                        onChanged: (bank) => setState(() => _selectedBank = bank),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
                     // ── QR Code Upload ──────────────────────────────────
                     _FieldGroup(
                       label: 'Payment QR Code',
                       child: _ImagePickerField(
-                        hasImage: _hasQrImage,
+                        hasImage: _qrImageBytes != null,
+                        imageBytes: _qrImageBytes,
                         icon: CupertinoIcons.qrcode,
                         accentColor: _C.indigo,
                         emptyLabel: 'Upload QR Code',
@@ -616,9 +791,9 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
                         doneLabel: 'QR code uploaded',
                         onTap: () => _showImageSheet(
                           'Upload Payment QR Code',
-                          () => setState(() => _hasQrImage = true),
+                          _pickQrImage,
                         ),
-                        onRemove: () => setState(() => _hasQrImage = false),
+                        onRemove: () => setState(() => _qrImageBytes = null),
                       ),
                     ),
 
@@ -920,6 +1095,7 @@ class _TappableField extends StatelessWidget {
 class _ImagePickerField extends StatelessWidget {
   const _ImagePickerField({
     required this.hasImage,
+    this.imageBytes,
     required this.icon,
     required this.accentColor,
     required this.emptyLabel,
@@ -930,6 +1106,7 @@ class _ImagePickerField extends StatelessWidget {
   });
 
   final bool hasImage;
+  final Uint8List? imageBytes;
   final IconData icon;
   final Color accentColor;
   final String emptyLabel;
@@ -956,11 +1133,22 @@ class _ImagePickerField extends StatelessWidget {
       child: hasImage
           ? Row(
               children: [
-                Icon(
-                  CupertinoIcons.checkmark_seal_fill,
-                  color: accentColor,
-                  size: 22,
-                ),
+                if (imageBytes != null)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: Image.memory(
+                      imageBytes!,
+                      width: 36,
+                      height: 36,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                else
+                  Icon(
+                    CupertinoIcons.checkmark_seal_fill,
+                    color: accentColor,
+                    size: 22,
+                  ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
@@ -1117,6 +1305,104 @@ class _QuickAmountChip extends StatelessWidget {
             color: _C.ink,
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _BankSelector extends StatelessWidget {
+  const _BankSelector({
+    required this.options,
+    required this.logoAssets,
+    required this.selected,
+    required this.onChanged,
+  });
+
+  final List<String> options;
+  final Map<String, String> logoAssets;
+  final String selected;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: CupertinoColors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _C.border, width: 1.5),
+      ),
+      child: Column(
+        children: List.generate(options.length, (i) {
+          final option = options[i];
+          final isSelected = selected == option;
+          final isLast = i == options.length - 1;
+          final logoAsset = logoAssets[option];
+
+          return GestureDetector(
+            onTap: () => onChanged(option),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.vertical(
+                  top: i == 0 ? const Radius.circular(14) : Radius.zero,
+                  bottom: isLast ? const Radius.circular(14) : Radius.zero,
+                ),
+                border: isLast
+                    ? null
+                    : const Border(
+                        bottom: BorderSide(
+                          color: CupertinoColors.separator,
+                          width: 0.5,
+                        ),
+                      ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    clipBehavior: Clip.hardEdge,
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? _C.accent.withValues(alpha: 0.1)
+                          : const Color(0xFFF2F2F7),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: logoAsset != null
+                        ? SvgPicture.asset(logoAsset, fit: BoxFit.cover)
+                        : Icon(
+                            CupertinoIcons.building_2_fill,
+                            size: 18,
+                            color: isSelected
+                                ? _C.accent
+                                : CupertinoColors.secondaryLabel,
+                          ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    option,
+                    style: GoogleFonts.dmSans(
+                      fontSize: 15,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.w500,
+                      color: isSelected ? _C.accent : _C.ink,
+                    ),
+                  ),
+                  const Spacer(),
+                  Icon(
+                    isSelected
+                        ? CupertinoIcons.checkmark_circle_fill
+                        : CupertinoIcons.circle,
+                    size: 22,
+                    color: isSelected
+                        ? _C.accent
+                        : CupertinoColors.tertiaryLabel,
+                  ),
+                ],
+              ),
+            ),
+          );
+        }),
       ),
     );
   }

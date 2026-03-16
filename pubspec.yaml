@@ -42,6 +42,7 @@ dependencies:
   cupertino_native: ^0.1.1
   shadcn_flutter: ^0.0.52
   shared_preferences: ^2.5.4
+  file_picker: ^8.0.0
 
 dev_dependencies:
   flutter_test:

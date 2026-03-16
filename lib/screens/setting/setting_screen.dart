@@ -14,10 +14,26 @@ class _SettingScreenState extends State<SettingScreen> {
   bool _pushNotifications = true;
 
   Future<void> _handleSignOut() async {
-    final navigator = Navigator.of(context);
-    navigator.pop();
+    // 1. Close the action sheet — must use rootNavigator:true because Settings
+    //    is a tab (the inner tab navigator has nothing to pop, causing the
+    //    "_history.isNotEmpty" assertion crash).
+    if (mounted) Navigator.of(context, rootNavigator: true).pop();
+
+    // 2. Wait for the sheet dismiss animation to finish
+    await Future<void>.delayed(const Duration(milliseconds: 150));
+
+    // 3. Perform the async logout
     await authService.logout();
-    navigator.pushNamedAndRemoveUntil('/sign-in', (route) => false);
+
+    // 4. Guard against the widget being disposed while logout was in flight
+    if (!mounted) return;
+
+    // 5. Replace the ENTIRE stack with sign-in — rootNavigator:true escapes
+    //    the tab inner navigator so the whole app resets correctly.
+    Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
+      '/sign-in',
+      (route) => false,
+    );
   }
 
   void _showComingSoon(String title) {
@@ -40,7 +56,10 @@ class _SettingScreenState extends State<SettingScreen> {
   Future<void> _showSignOutSheet() async {
     await showCupertinoModalPopup<void>(
       context: context,
-      builder: (_) => CupertinoActionSheet(
+      // Pass a captured reference to the navigator so it isn't looked up
+      // inside the builder's context (which may be stale by the time the
+      // user taps "Sign Out").
+      builder: (sheetCtx) => CupertinoActionSheet(
         title: const Text('Sign out of this account?'),
         message: const Text('You can sign back in at any time.'),
         actions: [
@@ -51,7 +70,7 @@ class _SettingScreenState extends State<SettingScreen> {
           ),
         ],
         cancelButton: CupertinoActionSheetAction(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => Navigator.of(sheetCtx).pop(),
           child: const Text(
             'Cancel',
             style: TextStyle(color: CupertinoColors.activeBlue),
@@ -148,6 +167,8 @@ class _SettingScreenState extends State<SettingScreen> {
   }
 }
 
+// ── Tiles ─────────────────────────────────────────────────────────────────────
+
 class _NavTile extends StatelessWidget {
   const _NavTile({
     required this.label,
@@ -230,9 +251,8 @@ class _InfoBadge extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────
-//  Leading icon square
-// ─────────────────────────────────────────────
+// ── Leading icon ──────────────────────────────────────────────────────────────
+
 class _LeadingIcon extends StatelessWidget {
   const _LeadingIcon({required this.icon, required this.color});
 
@@ -260,6 +280,8 @@ class _LeadingIcon extends StatelessWidget {
     );
   }
 }
+
+// ── Sign out button ───────────────────────────────────────────────────────────
 
 class _SignOutButton extends StatelessWidget {
   const _SignOutButton({required this.onPressed});

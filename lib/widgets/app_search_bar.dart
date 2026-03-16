@@ -58,6 +58,12 @@ class _AppSearchBarState extends State<AppSearchBar>
     _selectedCategory = widget.categories.isNotEmpty
         ? widget.categories.first
         : '';
+
+    // Notify parent of the default category so its state is in sync
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.onCategorySelected?.call(_selectedCategory);
+    });
+
     _focusAnimController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 220),
@@ -120,7 +126,6 @@ class _AppSearchBarState extends State<AppSearchBar>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Subtle eyebrow label
                 Text(
                   widget.subtitle.toUpperCase(),
                   style: const TextStyle(
@@ -145,10 +150,8 @@ class _AppSearchBarState extends State<AppSearchBar>
                           alignment: Alignment.centerLeft,
                         ),
                       ),
-
                       Text(
                         widget.title,
-                        // overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w800,
@@ -157,7 +160,6 @@ class _AppSearchBarState extends State<AppSearchBar>
                           height: 1.05,
                         ),
                       ),
-                      // ),
                     ],
                   ),
                 ),
@@ -272,7 +274,7 @@ class _AppSearchBarState extends State<AppSearchBar>
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           itemCount: widget.categories.length,
-          separatorBuilder: (_, _) => const SizedBox(width: 7),
+          separatorBuilder: (_, __) => const SizedBox(width: 7),
           itemBuilder: (context, index) {
             final category = widget.categories[index];
             final isSelected = category == _selectedCategory;

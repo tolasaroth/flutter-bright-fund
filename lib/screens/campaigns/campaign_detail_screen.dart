@@ -3,24 +3,7 @@ import 'package:gofundme/utils/colors.dart';
 import 'package:gofundme/widgets/app_navigation_bar.dart';
 import 'package:gofundme/screens/campaigns/donation_screen.dart';
 
-// ── Data ─────────────────────────────────────────────────────────────────────
-
-const _kImageUrl = 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800';
-
-const _kCampaign = {
-  'title': "Help Chan's Education",
-  'category': 'Education',
-  'description':
-      "Our special friend Chan, a bright student with enormous potential, needs your support to pursue higher education.\n\nOn January 2026, his family faced unexpected financial hardship, making it impossible to cover tuition and living costs. We are reaching out to the community to help this wonderful family during their time of need.\n\nEvery donation, no matter how small, brings hope and relief. Your generosity will directly shape his future.",
-  'raised': 2000.0,
-  'goal': 4000.0,
-  'donors': '128',
-  'daysLeft': '18',
-  'weeklyDonors': '34',
-  'organizerName': 'John Doe',
-  'organizerAvatar': 'https://i.pravatar.cc/50?img=5',
-  'organizerRole': 'Campaign Organiser',
-};
+// ── Static supporting data (updates/donations/comments remain mock for now) ──
 
 const _kUpdates = [
   {
@@ -91,7 +74,10 @@ const _kComments = [
 // ── Screen ────────────────────────────────────────────────────────────────────
 
 class CampaignDetailScreen extends StatefulWidget {
-  const CampaignDetailScreen({super.key});
+  /// The campaign data map passed from the browse/listing screen.
+  final Map<String, dynamic> campaign;
+
+  const CampaignDetailScreen({super.key, required this.campaign});
 
   @override
   State<CampaignDetailScreen> createState() => _CampaignDetailScreenState();
@@ -107,8 +93,31 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
     offset: Offset(0, 4),
   );
 
-  double get _progress =>
-      (_kCampaign['raised'] as double) / (_kCampaign['goal'] as double);
+  // ── Convenience getters ────────────────────────────────────────────────────
+
+  String get _title => widget.campaign['title'] as String? ?? '';
+  String get _category => widget.campaign['categoryName'] as String? ?? '';
+  String get _description => widget.campaign['description'] as String? ?? '';
+  String get _imageUrl => widget.campaign['imageUrl'] as String? ?? '';
+  double get _raised => (widget.campaign['raisedAmount'] as num?)?.toDouble() ?? 0;
+  double get _goal => (widget.campaign['goalAmount'] as num?)?.toDouble() ?? 1;
+  String get _organizerName => widget.campaign['organizerName'] as String? ?? '';
+  String get _organizerAvatar => widget.campaign['organizerImageUrl'] as String? ?? '';
+
+  // Static placeholders — replace with real data when your model supports them
+  String get _donors => widget.campaign['donors'] as String? ?? '—';
+  String get _daysLeft => widget.campaign['daysLeft'] as String? ?? '—';
+  String get _weeklyDonors => widget.campaign['weeklyDonors'] as String? ?? '—';
+  String get _organizerRole =>
+      widget.campaign['organizerRole'] as String? ?? 'Campaign Organiser';
+
+  double get _progress => (_raised / _goal).clamp(0.0, 1.0);
+
+  String _formatAmount(double amount) =>
+      amount.toStringAsFixed(0).replaceAllMapped(
+            RegExp(r'\B(?=(\d{3})+(?!\d))'),
+            (_) => ',',
+          );
 
   // ── Build ──────────────────────────────────────────────────────────────────
 
@@ -140,7 +149,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                 _isBookmarked
                     ? CupertinoIcons.bookmark_fill
                     : CupertinoIcons.bookmark,
-                color:CupertinoColors.activeBlue,
+                color: CupertinoColors.activeBlue,
                 size: 24,
               ),
             ),
@@ -173,14 +182,13 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
               ),
             ],
           ),
-          // Donate FAB pinned at bottom
           Positioned(left: 24, right: 24, bottom: 28, child: _buildDonateFAB()),
         ],
       ),
     );
   }
 
-  // ── Hero Card (image + stats + progress) ───────────────────────────────────
+  // ── Hero Card ──────────────────────────────────────────────────────────────
 
   Widget _buildHeroCard() {
     return Container(
@@ -193,13 +201,13 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Image with overlay
+          // Hero image with overlay
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             child: Stack(
               children: [
                 Image.network(
-                  _kImageUrl,
+                  _imageUrl,
                   height: 200,
                   width: double.infinity,
                   fit: BoxFit.cover,
@@ -212,7 +220,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                             child: CupertinoActivityIndicator(),
                           ),
                         ),
-                  errorBuilder: (_, _, _) => Container(
+                  errorBuilder: (_, __, ___) => Container(
                     height: 200,
                     color: AppColors.lightGreen,
                     child: const Center(
@@ -224,7 +232,6 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                     ),
                   ),
                 ),
-                // Gradient
                 Positioned.fill(
                   child: DecoratedBox(
                     decoration: const BoxDecoration(
@@ -237,7 +244,6 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                     ),
                   ),
                 ),
-                // Overlay content
                 Positioned(
                   bottom: 16,
                   left: 16,
@@ -245,7 +251,6 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Category badge
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 10,
@@ -256,7 +261,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          _kCampaign['category'] as String,
+                          _category,
                           style: const TextStyle(
                             color: AppColors.white,
                             fontSize: 11,
@@ -265,9 +270,8 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      // Title
                       Text(
-                        _kCampaign['title'] as String,
+                        _title,
                         style: const TextStyle(
                           color: AppColors.white,
                           fontSize: 18,
@@ -277,17 +281,12 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                         ),
                       ),
                       const SizedBox(height: 10),
-                      // Organiser row
                       Row(
                         children: [
-                          _avatar(
-                            _kCampaign['organizerAvatar'] as String,
-                            size: 26,
-                            radius: 8,
-                          ),
+                          _avatar(_organizerAvatar, size: 26, radius: 8),
                           const SizedBox(width: 6),
                           Text(
-                            _kCampaign['organizerName'] as String,
+                            _organizerName,
                             style: const TextStyle(
                               color: AppColors.white,
                               fontSize: 13,
@@ -301,34 +300,35 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                             size: 13,
                           ),
                           const Spacer(),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0x60000000),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  CupertinoIcons.clock,
-                                  color: AppColors.white,
-                                  size: 11,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${_kCampaign['daysLeft']} days left',
-                                  style: const TextStyle(
+                          if (_daysLeft != '—')
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0x60000000),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    CupertinoIcons.clock,
                                     color: AppColors.white,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
+                                    size: 11,
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '$_daysLeft days left',
+                                    style: const TextStyle(
+                                      color: AppColors.white,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
                         ],
                       ),
                     ],
@@ -344,7 +344,6 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Raised / goal / percentage
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
@@ -352,7 +351,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '\$${(_kCampaign['raised'] as double).toStringAsFixed(0).replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',')}',
+                          '\$${_formatAmount(_raised)}',
                           style: const TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.w900,
@@ -361,7 +360,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                           ),
                         ),
                         Text(
-                          'raised of \$${(_kCampaign['goal'] as double).toStringAsFixed(0).replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',')} goal',
+                          'raised of \$${_formatAmount(_goal)} goal',
                           style: const TextStyle(
                             fontSize: 13,
                             color: AppColors.muted,
@@ -394,7 +393,6 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
 
                 const SizedBox(height: 14),
 
-                // Progress bar
                 LayoutBuilder(
                   builder: (_, constraints) => ClipRRect(
                     borderRadius: BorderRadius.circular(8),
@@ -405,8 +403,9 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                         children: [
                           Container(color: const Color(0xFFEEF2F7)),
                           FractionallySizedBox(
-                            widthFactor: _progress.clamp(0.0, 1.0),
-                            child: Container(color: CupertinoColors.activeBlue),
+                            widthFactor: _progress,
+                            child: Container(
+                                color: CupertinoColors.activeBlue),
                           ),
                         ],
                       ),
@@ -416,24 +415,23 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
 
                 const SizedBox(height: 16),
 
-                // Stats row
                 Row(
                   children: [
                     _statChip(
                       CupertinoIcons.person_2_fill,
-                      _kCampaign['donors'] as String,
+                      _donors,
                       'donors',
                     ),
                     const SizedBox(width: 10),
                     _statChip(
                       CupertinoIcons.calendar,
-                      _kCampaign['daysLeft'] as String,
+                      _daysLeft,
                       'days left',
                     ),
                     const SizedBox(width: 10),
                     _statChip(
                       CupertinoIcons.arrow_up_right,
-                      _kCampaign['weeklyDonors'] as String,
+                      _weeklyDonors,
                       'this week',
                     ),
                   ],
@@ -487,7 +485,6 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Row(
         children: [
-          // Share
           Expanded(
             child: GestureDetector(
               onTap: () {},
@@ -520,19 +517,11 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
             ),
           ),
           const SizedBox(width: 12),
-          // Donate
           Expanded(
             flex: 2,
             child: CupertinoButton(
               padding: EdgeInsets.zero,
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  CupertinoPageRoute(
-                    builder: (_) => const DonationScreen(),
-                  ),
-                );
-              },
+              onPressed: _openDonation,
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 13),
                 decoration: BoxDecoration(
@@ -583,7 +572,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
           _sectionHeader('Campaign Story'),
           const SizedBox(height: 14),
           Text(
-            _kCampaign['description'] as String,
+            _description,
             style: const TextStyle(
               fontSize: 14,
               color: AppColors.muted,
@@ -657,7 +646,6 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
         children: [
           _sectionHeader('Donations', count: '${_kDonations.length}'),
           const SizedBox(height: 10),
-          // Activity banner
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
@@ -673,7 +661,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  '${_kCampaign['weeklyDonors']} people donated this week',
+                  '$_weeklyDonors people donated this week',
                   style: const TextStyle(
                     fontSize: 13,
                     color: Color(0xFF3B82F6),
@@ -744,11 +732,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
             ),
             child: Row(
               children: [
-                _avatar(
-                  _kCampaign['organizerAvatar'] as String,
-                  size: 52,
-                  radius: 14,
-                ),
+                _avatar(_organizerAvatar, size: 52, radius: 14),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -757,7 +741,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                       Row(
                         children: [
                           Text(
-                            _kCampaign['organizerName'] as String,
+                            _organizerName,
                             style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w800,
@@ -774,7 +758,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        _kCampaign['organizerRole'] as String,
+                        _organizerRole,
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.muted,
@@ -847,14 +831,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
   Widget _buildDonateFAB() {
     return CupertinoButton(
       padding: EdgeInsets.zero,
-      onPressed: () {
-        Navigator.push(
-          context,
-          CupertinoPageRoute(
-            builder: (_) => const DonationScreen(),
-          ),
-        );
-      },
+      onPressed: _openDonation,
       child: Container(
         height: 54,
         decoration: BoxDecoration(
@@ -889,6 +866,15 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────────
+
+  void _openDonation() {
+    Navigator.push(
+      context,
+      CupertinoPageRoute(
+        builder: (_) => DonationScreen(campaign: widget.campaign),
+      ),
+    );
+  }
 
   Widget _sectionHeader(String title, {String? count}) {
     return Row(
@@ -941,7 +927,6 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
     );
   }
 
-  /// Reusable network avatar with a fallback placeholder.
   Widget _avatar(String url, {required double size, double radius = 50}) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius),
@@ -950,7 +935,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
         width: size,
         height: size,
         fit: BoxFit.cover,
-        errorBuilder: (_, _, _) => Container(
+        errorBuilder: (_, __, ___) => Container(
           width: size,
           height: size,
           color: AppColors.lightGreen,
@@ -1007,7 +992,7 @@ class _UpdateItem extends StatelessWidget {
                   width: 36,
                   height: 36,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => Container(
+                  errorBuilder: (_, __, ___) => Container(
                     width: 36,
                     height: 36,
                     color: AppColors.lightGreen,
@@ -1042,7 +1027,8 @@ class _UpdateItem extends StatelessWidget {
               ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: AppColors.lightGreen,
                   borderRadius: BorderRadius.circular(8),
@@ -1120,13 +1106,12 @@ class _DonationItem extends StatelessWidget {
                   width: 42,
                   height: 42,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => Container(
+                  errorBuilder: (_, __, ___) => Container(
                     width: 42,
                     height: 42,
                     decoration: BoxDecoration(
-                      color: isTop
-                          ? const Color(0x3300C96B)
-                          : AppColors.surface,
+                      color:
+                          isTop ? const Color(0x3300C96B) : AppColors.surface,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
@@ -1173,7 +1158,8 @@ class _DonationItem extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   time,
-                  style: const TextStyle(fontSize: 12, color: AppColors.muted),
+                  style:
+                      const TextStyle(fontSize: 12, color: AppColors.muted),
                 ),
               ],
             ),
@@ -1246,7 +1232,7 @@ class _SupportItem extends StatelessWidget {
               width: 44,
               height: 44,
               fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => Container(
+              errorBuilder: (_, __, ___) => Container(
                 width: 44,
                 height: 44,
                 color: AppColors.lightGreen,

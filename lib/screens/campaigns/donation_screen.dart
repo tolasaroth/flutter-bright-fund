@@ -7,7 +7,9 @@ import 'package:flutter/material.dart'
     show Colors, LinearProgressIndicator, Divider;
 
 class DonationScreen extends StatefulWidget {
-  const DonationScreen({super.key});
+  const DonationScreen({super.key, required this.campaign});
+
+  final Map<String, dynamic> campaign;
 
   @override
   State<DonationScreen> createState() => _DonationScreenState();
@@ -35,8 +37,10 @@ class _DonationScreenState extends State<DonationScreen> {
     'Wing Bank': '/logo/wing.svg',
   };
 
-  double get _raisedAmount => 2000;
-  double get _goalAmount => 4000;
+  double get _raisedAmount =>
+      (widget.campaign['raisedAmount'] as num?)?.toDouble() ?? 0;
+  double get _goalAmount =>
+      (widget.campaign['goalAmount'] as num?)?.toDouble() ?? 1;
   double get _progress => _raisedAmount / _goalAmount;
 
   int get _selectedDonationAmount {
@@ -142,8 +146,8 @@ class _DonationScreenState extends State<DonationScreen> {
                     color: const Color(0xFF007AFF).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: const Text(
-                    'Education',
+                  child: Text(
+                    widget.campaign['categoryName'] as String? ?? '',
                     style: TextStyle(
                       fontSize: 11,
                       color: Color(0xFF007AFF),
@@ -158,8 +162,8 @@ class _DonationScreenState extends State<DonationScreen> {
                   color: CupertinoColors.secondaryLabel,
                 ),
                 const SizedBox(width: 4),
-                const Text(
-                  '18 days left',
+                Text(
+                  '${widget.campaign['daysLeft'] ?? '—'} days left',
                   style: TextStyle(
                     fontSize: 12,
                     color: CupertinoColors.secondaryLabel,
@@ -168,8 +172,8 @@ class _DonationScreenState extends State<DonationScreen> {
               ],
             ),
             const SizedBox(height: 10),
-            const Text(
-              "Help Chan's Education",
+            Text(
+              widget.campaign['title'] as String? ?? '',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w700,
@@ -185,8 +189,8 @@ class _DonationScreenState extends State<DonationScreen> {
                   color: Color(0xFF007AFF),
                 ),
                 const SizedBox(width: 4),
-                const Text(
-                  'John Doe',
+                Text(
+                  widget.campaign['organizerName'] as String? ?? '',
                   style: TextStyle(
                     fontSize: 16,
                     color: Color(0xFF007AFF),
@@ -234,8 +238,8 @@ class _DonationScreenState extends State<DonationScreen> {
                     color: const Color(0xFF34C759).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Text(
-                    '50%',
+                  child: Text(
+                  '${((_raisedAmount / _goalAmount) * 100).toStringAsFixed(0)}%',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
@@ -261,13 +265,15 @@ class _DonationScreenState extends State<DonationScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildStatItem(CupertinoIcons.group_solid, '128', 'donors'),
+                _buildStatItem(CupertinoIcons.group_solid,
+                    widget.campaign['donors'] as String? ?? '—', 'donors'),
                 _buildDivider(),
-                _buildStatItem(CupertinoIcons.calendar, '18', 'days left'),
+                _buildStatItem(CupertinoIcons.calendar,
+                    widget.campaign['daysLeft'] as String? ?? '—', 'days left'),
                 _buildDivider(),
                 _buildStatItem(
                   CupertinoIcons.arrow_up_right,
-                  '34',
+                  widget.campaign['weeklyDonors'] as String? ?? '—',
                   'this week',
                 ),
               ],
@@ -781,7 +787,7 @@ class _DonationScreenState extends State<DonationScreen> {
       builder: (context) => CupertinoAlertDialog(
         title: const Text('Confirm Donation'),
         content: Text(
-          'You are about to donate \$${(_selectedDonationAmount * 1.03).toStringAsFixed(2)} via $_selectedBankOption to "Help Chan\'s Education".',
+          'You are about to donate \$${(_selectedDonationAmount * 1.03).toStringAsFixed(2)} via $_selectedBankOption to "${widget.campaign['title'] ?? 'this campaign'}".',
         ),
         actions: [
           CupertinoDialogAction(

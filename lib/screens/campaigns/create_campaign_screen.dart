@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 import 'dart:io';
 import 'package:gofundme/services/campaign_service.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -91,16 +90,20 @@ const _categories = [
 //  Screen
 // ─────────────────────────────────────────────
 class CreateCampaignScreen extends StatefulWidget {
-  const CreateCampaignScreen({super.key, this.isEditing = false});
+  const CreateCampaignScreen({
+    super.key,
+    this.isEditing = false,
+    this.campaign,
+  });
 
   final bool isEditing;
+  final Map<String, dynamic>? campaign;
 
   @override
   State<CreateCampaignScreen> createState() => _CreateCampaignScreenState();
 }
 
 class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
-
   final CampaignService _campaignService = CampaignService();
 
   final _titleCtrl = TextEditingController();
@@ -123,7 +126,9 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
   bool _hasDeadline = true;
   Uint8List? _coverImageBytes;
   Uint8List? _qrImageBytes;
+  // FIX: store both file name AND file path for PDF at pick time
   String? _pdfFileName;
+  String? _pdfFilePath;
   String _selectedBank = 'ABA';
 
   static const _bankOptions = ['ABA', 'ACLEDA', 'Wing Bank'];
@@ -133,7 +138,6 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
     'Wing Bank': 'assets/logo/wing.svg',
   };
 
-  // Validation
   String? _titleError;
   String? _storyError;
   String? _thankCommentError;
@@ -145,6 +149,23 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
   void initState() {
     super.initState();
     _fetchCategories();
+    _prefillFromCampaign();
+  }
+
+  void _prefillFromCampaign() {
+    final c = widget.campaign;
+    if (c == null) return;
+    _titleCtrl.text = c['title'] as String? ?? '';
+    _storyCtrl.text = c['description'] as String? ?? '';
+    _goalCtrl.text = ((c['goalAmount'] as num?)?.toDouble() ?? 0)
+        .toStringAsFixed(0);
+    _currentAmountCtrl.text = ((c['raisedAmount'] as num?)?.toDouble() ?? 0)
+        .toStringAsFixed(0);
+    _selectedStatus = c['status'] as String? ?? 'active';
+    if (c['categoryName'] != null) {
+      final matched = _matchPresetCategory(c['categoryName'] as String);
+      _selectedCategoryId = matched?.id;
+    }
   }
 
   _Category? _matchPresetCategory(String name) {
@@ -159,11 +180,8 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
     return null;
   }
 
-  Future<File> _bytesToFile(Uint8List bytes, String name) async {
-    final dir = await getTemporaryDirectory();
-    final file = File('${dir.path}/$name');
-    return await file.writeAsBytes(bytes);
-  }
+  // Removed _bytesToFile — no longer needed.
+  // Images are now uploaded directly from bytes via uploadImageBytes().
 
   Future<void> _fetchCategories() async {
     try {
@@ -275,66 +293,78 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
 
     try {
       final goal = double.parse(_goalCtrl.text.replaceAll(',', ''));
+      // FIX: parse currentAmount and pass it to the service
+      final currentAmount = double.parse(
+        _currentAmountCtrl.text.replaceAll(',', ''),
+      );
 
       final result = await _campaignService.createCampaign(
         title: _titleCtrl.text.trim(),
         description: _storyCtrl.text.trim(),
         goalAmount: goal,
+        currentAmount: currentAmount, // FIX: was never sent
         categoryId: _selectedCategoryId,
+        status: _selectedStatus, // FIX: was never sent
         startDate: DateTime.now().toIso8601String(),
         endDate: _hasDeadline ? _endDate.toIso8601String() : null,
       );
 
-      final campaignId = result['id'];
+      final campaignId = result['id'] as String;
 
-      /// Upload Cover Image
+      /// Upload Cover Image — send bytes directly, no temp file needed
       if (_coverImageBytes != null) {
-        final file = await _bytesToFile(_coverImageBytes!, 'cover.jpg');
-        await _campaignService.uploadImages(campaignId, [file]);
+        await _campaignService.uploadImageBytes(
+          campaignId,
+          _coverImageBytes!,
+          'cover.jpg',
+        );
       }
 
-      /// Upload PDF Document
-      if (_pdfFileName != null) {
-        final result = await FilePicker.platform.pickFiles(
-          type: FileType.custom,
-          allowedExtensions: ['pdf'],
-        );
-
-        if (result != null && result.files.single.path != null) {
-          final file = File(result.files.single.path!);
-          await _campaignService.uploadDocuments(campaignId, [file]);
-        }
+      /// Upload PDF — use the path stored at pick time
+      if (_pdfFilePath != null) {
+        final file = File(_pdfFilePath!);
+        await _campaignService.uploadDocuments(campaignId, [file]);
       }
 
       if (!mounted) return;
 
       showCupertinoDialog<void>(
         context: context,
-        builder: (_) => CupertinoAlertDialog(
+        builder: (dialogContext) => CupertinoAlertDialog(
           title: const Text('Campaign Created! 🎉'),
-          content: Text('"${_titleCtrl.text.trim()}" was submitted successfully.'),
+          content: Text(
+            '"${_titleCtrl.text.trim()}" was submitted successfully.',
+          ),
           actions: [
             CupertinoDialogAction(
               isDefaultAction: true,
               onPressed: () {
-                Navigator.pop(context);
-                Navigator.pop(context);
+                Navigator.pop(dialogContext); // close dialog
+                Navigator.pop(context); // leave create screen
               },
-              child: const Text('Done'),
+              child: const Text(
+                'Done',
+                style: TextStyle(color: CupertinoColors.activeBlue),
+              ),
             ),
           ],
         ),
       );
     } catch (e) {
+      // FIX: guard mounted before showing error dialog
+      if (!mounted) return;
       showCupertinoDialog<void>(
         context: context,
-        builder: (_) => CupertinoAlertDialog(
+        builder: (dialogContext) => CupertinoAlertDialog(
           title: const Text('Error'),
           content: Text(e.toString()),
           actions: [
             CupertinoDialogAction(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text(
+                'OK',
+                style: TextStyle(color: CupertinoColors.activeBlue),
+              ),
             ),
           ],
         ),
@@ -405,6 +435,7 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
     }
   }
 
+  // FIX: store both the file name AND the file path when the user picks a PDF
   Future<void> _pickPdfDocument() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -412,7 +443,10 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
       allowMultiple: false,
     );
     if (result != null && result.files.isNotEmpty) {
-      setState(() => _pdfFileName = result.files.first.name);
+      setState(() {
+        _pdfFileName = result.files.first.name;
+        _pdfFilePath = result.files.first.path; // FIX: capture path here
+      });
     }
   }
 
@@ -659,7 +693,11 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
                           'Upload PDF Document',
                           _pickPdfDocument,
                         ),
-                        onRemove: () => setState(() => _pdfFileName = null),
+                        // FIX: clear both name and path on remove
+                        onRemove: () => setState(() {
+                          _pdfFileName = null;
+                          _pdfFilePath = null;
+                        }),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -773,7 +811,8 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
                         options: _bankOptions,
                         logoAssets: _bankLogoAssets,
                         selected: _selectedBank,
-                        onChanged: (bank) => setState(() => _selectedBank = bank),
+                        onChanged: (bank) =>
+                            setState(() => _selectedBank = bank),
                       ),
                     ),
                     const SizedBox(height: 14),
@@ -915,6 +954,7 @@ class _StyledTextFieldState extends State<_StyledTextField> {
         placeholder: widget.placeholder,
         keyboardType: widget.keyboardType,
         autocorrect: widget.autocorrect,
+        cursorColor: _C.ink,
         maxLines: widget.maxLines,
         onChanged: widget.onChanged,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -1383,8 +1423,9 @@ class _BankSelector extends StatelessWidget {
                     option,
                     style: GoogleFonts.dmSans(
                       fontSize: 15,
-                      fontWeight:
-                          isSelected ? FontWeight.w600 : FontWeight.w500,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w500,
                       color: isSelected ? _C.accent : _C.ink,
                     ),
                   ),

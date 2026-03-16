@@ -43,6 +43,8 @@ dependencies:
   shadcn_flutter: ^0.0.52
   shared_preferences: ^2.5.4
   file_picker: ^8.0.0
+  path_provider: ^2.1.5
+  http_parser: ^4.1.2
 
 dev_dependencies:
   flutter_test:

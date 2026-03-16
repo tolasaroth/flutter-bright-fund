@@ -78,54 +78,105 @@ final List<Map<String, dynamic>> _campaigns = [
 ];
 
 class _BrowseCampaignScreenState extends State<BrowseCampaignScreen> {
-  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  String _selectedCategory = 'All';
 
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
+  List<Map<String, dynamic>> get _filteredCampaigns {
+    return _campaigns.where((campaign) {
+      // Category filter — 'All' shows everything
+      final matchesCategory = _selectedCategory == 'All' ||
+          campaign['categoryName']
+              .toString()
+              .toLowerCase() ==
+              _selectedCategory.toLowerCase();
+
+      // Search filter — matches title or organizer name
+      final query = _searchQuery.toLowerCase();
+      final matchesSearch = query.isEmpty ||
+          campaign['title'].toString().toLowerCase().contains(query) ||
+          campaign['organizerName'].toString().toLowerCase().contains(query);
+
+      return matchesCategory && matchesSearch;
+    }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
+    final filtered = _filteredCampaigns;
+
     return CupertinoPageScaffold(
       backgroundColor: AppColors.surface,
       child: SafeArea(
         child: Column(
           children: [
             AppSearchBar(
-              // ignore: duplicate_ignore
-              // ignore: avoid_print
-              onSearchChanged: (query) => print(query),
-              onCategorySelected: (cat) => print(cat),
+              onSearchChanged: (query) =>
+                  setState(() => _searchQuery = query),
+              onCategorySelected: (cat) =>
+                  setState(() => _selectedCategory = cat),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             Expanded(
-              child: ListView.builder(
-                itemCount: _campaigns.length,
-                itemBuilder: (context, index) {
-                  final campaign = _campaigns[index];
-                  return CampaignCard(
-                    title: campaign['title'],
-                    description: campaign['description'],
-                    imageUrl: campaign['imageUrl'],
-                    raisedAmount: campaign['raisedAmount'],
-                    goalAmount: campaign['goalAmount'],
-                    categoryName: campaign['categoryName'],
-                    organizerName: campaign['organizerName'],
-                    organizerImageUrl: campaign['organizerImageUrl'],
-                    onTap: () =>
-                        Navigator.of(context, rootNavigator: true).push(
-                          CupertinoPageRoute(
-                            builder: (_) => const CampaignDetailScreen(),
+              child: filtered.isEmpty
+                  ? _buildEmptyState()
+                  : ListView.builder(
+                      itemCount: filtered.length,
+                      itemBuilder: (context, index) {
+                        final campaign = filtered[index];
+                        return CampaignCard(
+                          title: campaign['title'],
+                          description: campaign['description'],
+                          imageUrl: campaign['imageUrl'],
+                          raisedAmount: campaign['raisedAmount'],
+                          goalAmount: campaign['goalAmount'],
+                          categoryName: campaign['categoryName'],
+                          organizerName: campaign['organizerName'],
+                          organizerImageUrl: campaign['organizerImageUrl'],
+                          onTap: () =>
+                              Navigator.of(context, rootNavigator: true).push(
+                            CupertinoPageRoute(
+                              // ✅ Pass the tapped campaign to the detail screen
+                              builder: (_) =>
+                                  CampaignDetailScreen(campaign: campaign),
+                            ),
                           ),
-                        ),
-                  );
-                },
-              ),
+                        );
+                      },
+                    ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            '🔍',
+            style: TextStyle(fontSize: 48),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'No campaigns found',
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
+              color: CupertinoColors.label.resolveFrom(context),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Try a different search or category',
+            style: TextStyle(
+              fontSize: 14,
+              color: CupertinoColors.secondaryLabel.resolveFrom(context),
+            ),
+          ),
+        ],
       ),
     );
   }
